@@ -1,5 +1,4 @@
-//coded by Nathan 
-
+// coded by Nathan
 #include <Servo.h> 
 
 Servo actuator; 
@@ -12,7 +11,8 @@ delay(100);
 
 void loop() {
 int sensorValue = analogRead(A0); 
-float gwcReading = (174.96 - 0.36*sensorValue)/1.67;
+float vwcReading = -0.2104*sensorValue + 104.12;
+
 if(Serial.available() >0) {  
   char serialReading = Serial.read(); 
   if(serialReading == '\n') { 
@@ -24,7 +24,10 @@ if(Serial.available() >0) {
       actuator.writeMicroseconds(1000); 
     }
    else if(command =="l") { 
-    Serial.println(gwcReading);
+    Serial.println(vwcReading);
+   }
+   else if(command =="s") { 
+    actuator.writeMicroseconds(1500);
    }
     
   command = "";
