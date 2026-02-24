@@ -1,11 +1,8 @@
-#Path: /Drone/drone_app/server.py
-
 import serial, pynmea2, time, os, math
 from flask import Flask, render_template, jsonify
 logged_data_list = []
-
+import requests
 app = Flask(__name__)
-
 
 current_latitude = "N/A"
 current_longitude = "N/A"
@@ -38,7 +35,7 @@ def read_gps_with_accuracy():
     while time.time() < timeout:
         if serGps and serGps.in_waiting > 0:
             line = serGps.readline().decode('utf-8', errors='ignore').strip()
-           if 'GSA' in line:
+            if 'GSA' in line:
                 msg = pynmea2.parse(line)
                 hdop = float(msg.hdop)
             if 'GGA' in line:
@@ -57,9 +54,8 @@ def index():
 
 @app.route("/log")
 def log_action():
-    global sample_ID, last_lat, last_lon, current_moisture, current_latitude, current_longitude>
+    global sample_ID, last_lat, last_lon, current_moisture, current_latitude, current_longitude, logged_data_list
     
-    # Actuator
     if serMoisture:
         serMoisture.write(b'l\n')
         time.sleep(0.5)
@@ -68,21 +64,19 @@ def log_action():
                 current_moisture = float(serMoisture.readline().decode().strip())
             except: current_moisture = "Error"
 
-    # GPS
     serGps.reset_input_buffer()
     new_lat, new_lon, h_err = read_gps_with_accuracy()
     
     if new_lat is None:
         return jsonify({"status": "error", "message": "No GPS Fix - Log Aborted"})
 
-    distance_from_last = 0.0
+        distance_from_last = 0.0
     if last_lat is not None:
         distance_from_last = dist_points(last_lat, last_lon, new_lat, new_lon)
-      # Min distance for accurate logging
         if h_err and distance_from_last < (h_err * 3):
             return jsonify({
                 "status": "warning", 
-                "message": f"Log Skipped: Points too close ({distance_from_last:.2f}m < {h_err*>
+                "message": f"Log Skipped: Points too close ({distance_from_last:.2f}m < {h_err*3:.1f}m threshold)"
             })
 
     current_latitude, current_longitude = new_lat, new_lon
@@ -90,10 +84,13 @@ def log_action():
     
     filename = "data.csv"
     if not os.path.exists(filename):
-        with open(filename, 'w') as f: f.write('Sample ID, Latitude, Longitude, Moisture, Dista>
-    
+        with open(filename, 'w') as f: f.write('Sample ID, Latitude, Longitude, Moisture,Elevation,  Distance(m)\n')
+    url = f"https://epqs.nationalmap.gov/v1/json?x={current_longitude}&y={current_latitude}&units=Meters&wkid=4326"
+    response = requests.get(url)
+    elevation = response.json()['value']
+    elevation = float(elevation)
     with open(filename, 'a') as f:
-        f.write(f"{sample_ID},{current_latitude},{current_longitude},{current_moisture},{distan>
+        f.write(f"{sample_ID},{current_latitude},{current_longitude},{current_moisture},{elevation}, {distance_from_last:.2f}\n")
     sample_ID += 1
     new_point = [
         sample_ID,
@@ -111,7 +108,7 @@ def log_action():
 def reset_tracking():
     global sample_ID, last_lat, last_lon
     sample_ID = 0
-   last_lat = last_lon = None
+    last_lat = last_lon = None
     return "Tracking and ID Reset."
 
 @app.route("/extend")
@@ -127,8 +124,11 @@ def retract():
 @app.route("/collect") 
 def collect(): 
     global sample_ID, last_lat, last_lon, current_moisture, current_latitude, current_longitude
-    # Get GPS Data
     lat, lon, h_err = read_gps_with_accuracy()
+    url = f"https://epqs.nationalmap.gov/v1/json?x={lon}&y={lat}&units=Meters&wkid=4326"
+    response = requests.get(url)
+    elevation = response.json()['value']
+    elevation = float(elevation)
    
     if serMoisture:
         serMoisture.write(b'l\n')
@@ -138,13 +138,11 @@ def collect():
                 current_moisture = float(serMoisture.readline().decode().strip())
             except: current_moisture = "Error"
 
-
-
-    # Return everything as a single JSON object
     return jsonify({
         "moisture": current_moisture,
         "lat": lat if lat else "No Fix",
         "lon": lon if lon else "No Fix",
+        "elevation": elevation if elevation else "Couldn't get elevation data, check wifi",
         "h_err": round(h_err, 2) if h_err else "N/A"
     })
 
