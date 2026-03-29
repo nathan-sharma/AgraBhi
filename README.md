@@ -1,5 +1,3 @@
-# 🏆 Project Achievements
-
 This project won in the **Senior Division** of the **Environmental Engineering** category at two science fairs:
 
 * 🥈 **2nd Place** at the 2026 Science and Engineering Fair of Houston
@@ -10,7 +8,7 @@ This project won in the **Senior Division** of the **Environmental Engineering**
 
 ---
 
-## 🛰️ About AgraBhi 2026
+## About AgraBhi 2026
 
 Variation in soil moisture across agricultural fields reduces crop yields and leads to inefficient water management. Climate change has increased the variability of soil moisture, intensifying this problem. Exisiting soil moisture gauging methods fail to capture moisture at the root-level of crops. 
 
