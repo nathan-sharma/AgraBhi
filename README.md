@@ -9,6 +9,9 @@ This project won in the **Senior Division** of the **Environmental Engineering**
 ---
 
 ## About AgraBhi 2025-26 (Year 1/3)
+#📷 Project video 
+https://tinyurl.com/agrabhiyear1 
+
 Variation in soil moisture across agricultural fields reduces crop yields and leads to inefficient water management. Climate change has increased the variability of soil moisture, intensifying this problem. Existing soil moisture gauging methods fail to capture moisture at the root level of crops.
 
 An autonomous drone system, built for under $1000, collects soil moisture data and generates high-resolution field maps using various interpolation models and environmental covariates (i.e., elevation & irrigation proximity data). The drone uses:
