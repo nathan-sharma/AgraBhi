@@ -3,7 +3,7 @@ This project won in the **Senior Division** of the **Environmental Engineering**
 * 🥈 **2nd Place** at the 2026 Science and Engineering Fair of Houston
 * 🥉 **3rd Place** at the 2026 Texas Science and Engineering Fair (**State Finalist**)
 
-> [!HI]
+> [!]
 > We are working toward ISEF qualification with our 2027 extension project (coming soon!)
 
 ---
