@@ -11,11 +11,11 @@ This project won in the **Senior Division** of the **Environmental Engineering**
 ## About AgraBhi 2025-26 (Year 1/3)
 Variation in soil moisture across agricultural fields reduces crop yields and leads to inefficient water management. Climate change has increased the variability of soil moisture, intensifying this problem. Existing soil moisture gauging methods fail to capture moisture at the root level of crops.
 
-An autonomous drone system, built for under $1000, collects soil moisture data and generates high-resolution field maps using various interpolation models and environmental covariates (i.e., elevation & irrigation proximity data). The drone integrates:
+An autonomous drone system, built for under $1000, collects soil moisture data and generates high-resolution field maps using various interpolation models and environmental covariates (i.e., elevation & irrigation proximity data). The drone uses:
 
 * A custom linear actuator-driven soil sensor probe, extending the sensor 11 centimeters into the ground.
 * A Real-Time Kinematic (RTK) GPS, a positioning system that provides centimeter-level accuracy using corrections from a fixed base station.
-* A Raspberry Pi / Pixhawk architecture for data collection and semi-autonomous navigation.
+* Raspberry Pi / Pixhawk communication for hands-free data collection upon landing.
 
 The drone can be controlled completely hands-free via a custom-coded application named the AgraBhi Data Hub, accessible on any web browser with a stable internet connection. Custom-written code collected data at landing points, controlled the actuator, and evaluated interpolation methods.
 
