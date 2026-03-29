@@ -1,23 +1,24 @@
-This project won in the senior division of the environmental engineering category at two science fairs: 
-- 🥈 **2nd place** at the 2026 Science and Engineering Fair of Houston
-- 🥉 **3rd place** at the 2026 Texas Science and Engineering Fair (state finalist)
+# 🏆 Project Achievements
 
-We are working toward ISEF qualification with our 2027 extension project (coming soon!)
+This project won in the **Senior Division** of the **Environmental Engineering** category at two science fairs:
 
+* 🥈 **2nd Place** at the 2026 Science and Engineering Fair of Houston
+* 🥉 **3rd Place** at the 2026 Texas Science and Engineering Fair (State Finalist)
 
-About AgraBhi 2026: 
-Variation in soil moisture across agricultural fields reduces crop yields and leads to inefficient
-water management. Climate change has increased the variability of soil moisture, intensifying this
-problem. Exisiting soil moisture gauging methods fail to capture moisture at the root-level of crops. An autonomous drone system, built for under $1000, collects soil moisture data and generates high -
-resolution field maps using various interpolation models and environmental covariates (i.e elevation & irrigation proximity data). The drone integrates a custom linear actuator driven soil sensor probe, extending the sensor 11 centimeters into the ground,
-a centimeter-accurate RTK GPS, and a Raspberry Pi / Pixhawk architecture for data collection and semi - autonomous navigation. The drone is able to be controlled completely hands-free via a custom-coded application named the AgraBhi Data Hub, accessible on any web browser with a stable internet connection.  Custom
-written code collected data at landing points, controlled the actuator, and evaluated interpolation
-methods. Among Ordinary Kriging, Regression Kriging, and Inverse Distance Weighted Interpolation,
-Regression Kriging demonstrated the smallest Root - Mean - Square Error ( RMSE ) in Leave - One -
-Out - Cross - Validation ( LOOCV ) and reasonable Mean Error ( ME ) when coupled with elevation
-data. Field validation shows interpolated moisture values are within experimental uncertainty of
-ground - truth measurements. While commercial agricultural drones cost several thousand dollars,
-our relatively low - cost system provides high - resolution, spatially explicit moisture mapping,
-revealing detailed patterns of soil moisture variation and potentially supporting improved
-irrigation decision - making and water efficiency.
+> [!IMPORTANT]
+> We are working toward ISEF qualification with our 2027 extension project (coming soon!)
 
+---
+
+## 🛰️ About AgraBhi 2026
+
+Variation in soil moisture across agricultural fields reduces crop yields and leads to inefficient water management. Climate change has increased the variability of soil moisture, intensifying this problem. Exisiting soil moisture gauging methods fail to capture moisture at the root-level of crops. 
+
+An autonomous drone system, built for **under $1000**, collects soil moisture data and generates high-resolution field maps using various interpolation models and environmental covariates (i.e elevation & irrigation proximity data). The drone integrates:
+* A custom linear actuator driven soil sensor probe, extending the sensor **11 centimeters** into the ground.
+* A centimeter-accurate **RTK GPS**.
+* A **Raspberry Pi / Pixhawk** architecture for data collection and semi-autonomous navigation.
+
+The drone is able to be controlled completely hands-free via a custom-coded application named the **AgraBhi Data Hub**, accessible on any web browser with a stable internet connection. Custom written code collected data at landing points, controlled the actuator, and evaluated interpolation methods. 
+
+Among Ordinary Kriging, Regression Kriging, and Inverse Distance Weighted Interpolation, **Regression Kriging** demonstrated the smallest Root-Mean-Square Error (RMSE) in Leave-One-Out-Cross-Validation (LOOCV) and reasonable Mean Error (ME) when coupled with elevation data. Field validation shows interpolated moisture values are within experimental uncertainty of ground-truth measurements. While commercial agricultural drones cost several thousand dollars, our relatively low-cost system provides high-resolution, spatially explicit moisture mapping, revealing detailed patterns of soil moisture variation and potentially supporting improved irrigation decision-making and water efficiency.
