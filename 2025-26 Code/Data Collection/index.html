@@ -40,13 +40,22 @@
 <body>
 
     <h1>AgraBhi Data Hub</h1>
+<details style="margin-bottom: 30px;">
+<summary><h2 style="display: inline;">Information</h1></summary>
+<p>The proram will refuse to log if your sample points are too close together. This is to account for GPS noise. To bypass this, use Force Log.</p>
     <p>Please see Mission Planner for telemetry data. The data hub is only for data collection and actuator control.</p>
+<p>Enter the coordinates of your sprinklers to improve the accuracy of the heatmmap.</p>
    <p>Before logging a point, we recommend clicking 'Read Sensors' to make sure you're still getting data.</p>
-    <div class="controls">
+ </details>
+   <div class="controls">
         <button onclick="collect()">Read Sensors</button>
         <button class="log-btn" onclick="logData()">Log Sensor Data</button>
+        <button onclick="logData(true)" style="background: #9335db;">Force Log</button>
         <button onclick="sendCmd('extend')">Extend Sensor</button>
         <button onclick="sendCmd('retract')">Retract Sensor</button>
+       <button onclick="window.open('/view_logs', '_blank')">Download All Logs</button>
+       <button onclick="clearLogs()" style="background:#e63946;">ERASE ALL LOGS</button>
+ <button onclick="window.location.href='/covariates'"  style="background:#008800;">Enter Sprinklers</button>
     </div>
 
     <h3>System messages:</h3>
@@ -59,6 +68,8 @@
     <script>
         const consoleEl = document.getElementById("console");
 
+        // --- DATA INITIALIZATION ---
+        // Use the list injected by the server, or an empty array if none exists
         let logged_data_list = {{ initial_data | tojson | safe if initial_data is defined else '[]' }};
 
         function addLog(msg, type='info') {
@@ -69,10 +80,12 @@
             consoleEl.prepend(div);
         }
 
+        // --- MAP LOGIC ---
         const map = L.map('map').setView(
             logged_data_list.length > 0 ? [logged_data_list[0][1], logged_data_list[0][2]] : [0, 0],
             19
         );
+
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
             attribution: 'Tiles &copy; Esri'
         }).addTo(map);
@@ -84,9 +97,10 @@
                             '#ff4400';
         }
 
+        // Function to draw a specific point on the map
         function drawMarker(point) {
             const [ID, lat, lon, moist] = point;
-            L.circleMarker([lat, lon], {
+           L.circleMarker([lat, lon], {
                 radius: 8,
                 fillColor: getColor(moist),
                 color: "#fff",
@@ -98,47 +112,59 @@
             .bindPopup(`<strong>Moisture:</strong> ${moist}%<br><strong>Sample ID:</strong> ${ID}`);
         }
 
+        // Draw markers for any data present on initial page load
         logged_data_list.forEach(drawMarker);
 
-function logData() {
-    addLog("Logging current data point...", "info");
+        // --- COMMANDS ---
+function logData(override = false) {
+    const endpoint = override ? '/log?override=true' : '/log';
+    addLog(override ? "Force logging data point..." : "Logging current data point...", "info");
 
-    fetch('/log')
-        .then(r => r.json())
+    fetch(endpoint)
+       .then(r => r.json())
         .then(data => {
             if (data.status === "warning") {
                 addLog(data.message, "warn");
-                return; 
+                return;
             }
-
             if (data.status === "error") {
                 addLog(data.message, "error");
-                return; 
+                return;
             }
-            logged_data_list = data["full_list"];
 
+            logged_data_list = data["full_list"];
             const [ID, lat, lon, moist] = data.new_point;
             drawMarker(data.new_point);
             map.panTo([lat, lon]);
-
-            addLog(`Success: Logged Sample ${ID}`, "success");
+            addLog(`Success: Logged Sample ${ID} ${override ? '(OVERRIDE)' : ''}`, "success");
         })
         .catch(e => {
-            console.error(e);
             addLog("Logging failed: " + e, "error");
         });
 }
+
         function collect() {
             addLog("Requesting live sensor data...");
             fetch('/collect')
                 .then(r => r.json())
                 .then(data => {
-                    let msg = `READOUT: Lat ${data.lat}, Lon ${data.lon} | Moisture: ${data.moisture}% VWC | Elev: ${data.elevation} m`;
+let msg = `READOUT: Lat ${data.lat}, Lon ${data.lon} | Moisture: ${data.moisture}% VWC | Elev: ${data.elevation} m | Horiz Error: ${data.h_err} m | Closest sprinkler: ${data.closest_sprinkler}, Sprinkler Dist: ${data.sprinkler_dist} m`;
                     let statusClass = isNaN(data.moisture) ? "warn" : "success";
                     addLog(msg, statusClass);
                 })
                 .catch(err => addLog("Collect failed: " + err, "error"));
         }
+
+function clearLogs() {
+    if (!confirm("Are you sure you want to clear all logs? This cannot be undone.")) return;
+
+    fetch("/clear_logs")
+        .then(r => r.text())
+        .then(msg => {
+            addLog(msg, "success");
+        })
+        .catch(err => addLog("Failed to clear logs: " + err, "error"));
+}
 
         function sendCmd(action) {
             addLog(`Sending ${action.toUpperCase()} command...`);
@@ -148,7 +174,28 @@ function logData() {
                     const type = msg.includes("SUCCESS") ? "success" : "error";
                     addLog(msg, type);
                 });
-        }
-    </script>
+        } 
+setInterval(() => {
+    fetch('/check_landing')
+        .then(r => r.json())
+        .then(data => {
+            if (data.landed) {
+                addLog("DRONE LANDED, SENSOR EXTENDED, LOGGING SAMPLE 30 SEC FROM 1ST MSG", "success");
+
+                fetch('/get_latest_point')
+                    .then(r => r.json())
+                    .then(point => {
+                        logged_data_list.push(point);
+                        drawMarker(point);
+
+                        const [ID, lat, lon, moist] = point;
+                        map.panTo([lat, lon]);
+                    });
+            } else {
+                addLog("DRONE AIRBORNE", "info");
+            }
+        });
+}, 2000);
+  </script>
 </body>
 </html>
