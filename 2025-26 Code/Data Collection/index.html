@@ -68,8 +68,6 @@
     <script>
         const consoleEl = document.getElementById("console");
 
-        // --- DATA INITIALIZATION ---
-        // Use the list injected by the server, or an empty array if none exists
         let logged_data_list = {{ initial_data | tojson | safe if initial_data is defined else '[]' }};
 
         function addLog(msg, type='info') {
@@ -80,7 +78,6 @@
             consoleEl.prepend(div);
         }
 
-        // --- MAP LOGIC ---
         const map = L.map('map').setView(
             logged_data_list.length > 0 ? [logged_data_list[0][1], logged_data_list[0][2]] : [0, 0],
             19
@@ -97,7 +94,6 @@
                             '#ff4400';
         }
 
-        // Function to draw a specific point on the map
         function drawMarker(point) {
             const [ID, lat, lon, moist] = point;
            L.circleMarker([lat, lon], {
@@ -111,11 +107,8 @@
             .addTo(map)
             .bindPopup(`<strong>Moisture:</strong> ${moist}%<br><strong>Sample ID:</strong> ${ID}`);
         }
-
-        // Draw markers for any data present on initial page load
         logged_data_list.forEach(drawMarker);
 
-        // --- COMMANDS ---
 function logData(override = false) {
     const endpoint = override ? '/log?override=true' : '/log';
     addLog(override ? "Force logging data point..." : "Logging current data point...", "info");
