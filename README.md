@@ -10,6 +10,8 @@ We are working toward ISEF qualification with our 2027 extension project (coming
 ## About AgraBhi 2025-26 (Year 1/3)
 ###  Project video 
 ### https://tinyurl.com/agrabhiyear1 
+###  Project website
+### https://nathan-sharma.github.io/agrabhi-website/
 
 Variation in soil moisture across agricultural fields reduces crop yields and leads to inefficient water management. Climate change has increased the variability of soil moisture, intensifying this problem. Existing soil moisture gauging methods fail to capture moisture at the root level of crops.
 
