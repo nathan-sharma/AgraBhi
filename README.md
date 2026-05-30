@@ -5,21 +5,18 @@ This project won in the **Senior Division** of the **Environmental Engineering**
 
 We are working toward ISEF qualification with our 2027 extension project (coming soon!)
 
----
+## About AgraBhi 2026-27 (Year 2/3)
 
-## About AgraBhi 2025-26 (Year 1/3)
-### Project video: tinyurl.com/agrabhiyear1 
-### Project Website: nathan-sharma.github.io/agrabhi-website/
-### Science Fair Abstract 
+**Project Links:**
+* **Project video:** [tinyurl.com/agrabhiyear1](https://tinyurl.com/agrabhiyear1)
+* **Project Website:** [nathan-sharma.github.io/agrabhi-website/](https://nathan-sharma.github.io/agrabhi-website/)
 
-Variation in soil moisture across agricultural fields reduces crop yields and leads to inefficient water management. Climate change has increased the variability of soil moisture, intensifying this problem. Existing soil moisture gauging methods fail to capture moisture at the root level of crops.
 
-An autonomous drone system, built for under $1000, collects soil moisture data and generates high-resolution field maps using various interpolation models and environmental covariates (i.e., elevation & irrigation proximity data). The drone uses:
+#### 1. Drone to Rovers
+An important limitation of our project last year was the drone struggled to get through the crop canopy. Its blades could easily damage crops, and designing a solution, such as lowering a pod using a tether while the drone hovers above the crops, would cost significant battery life and be very difficult to build. To fix this, we decided to switch our project to creating a swarm of five rovers. Each rover would cost ~$400, be autonomous, and would communicate with one another to take samples effectively.
 
-* A custom linear actuator-driven soil sensor probe, extending the sensor 11 centimeters into the ground.
-* A Real-Time Kinematic (RTK) GPS, a positioning system that provides centimeter-level accuracy using corrections from a fixed base station.
-* Raspberry Pi / Pixhawk communication for hands-free data collection upon landing.
+#### 2. 3D Mapping
+Rather than simply taking a single measurement at points, the rovers will take multiple measurements at different depths per point to calculate a moisture gradient at that location. This allows our models to extend moisture predictions to beneath the soil rather than just being a flat heatmap, which gives farmers significantly more information on their field's moisture patterns.
 
-The drone can be controlled completely hands-free via a custom-coded application named the AgraBhi Data Hub, accessible on any web browser with a stable internet connection. Custom-written code collected data at landing points, controlled the actuator, and evaluated interpolation methods.
-
-Regarding data analysis, among Ordinary Kriging, Regression Kriging, and Inverse Distance Weighted Interpolation, Regression Kriging demonstrated the smallest Root-Mean-Square Error (RMSE) in Leave-One-Out-Cross-Validation (LOOCV) and reasonable Mean Error (ME) when coupled with elevation data. Field validation shows interpolated moisture values are within experimental uncertainty of ground-truth measurements. While commercial agricultural drones cost several thousand dollars, our relatively low-cost system provides high-resolution, spatially explicit moisture mapping, revealing detailed patterns of soil moisture variation and potentially supporting improved irrigation decision-making and water efficiency.
+#### 3. Adaptive Path Planning
+We think our rovers can improve their own predictive accuracy by driving to the highest uncertainty areas in its predictions in real time. For example, the system could start with an initial set of moisture measurements across the field, generate a heatmap, then tell each rover to go to the most uncertain point on this heatmap and take a measurement there, repeating the process until accuracy is significantly improved and uncertainty is evenly distributed.
