@@ -31,7 +31,7 @@ data = np.array( #this is fake data to test it. ALSO, get data at every centimet
 lat = data[:, 0] 
 lon = data[:, 1] 
 moisture = data[:, 3] 
-depth = data[:, 2] 
+depth = data[:, 2] /100
 num_points = 50 
 
 #scale this to UTM meters so we can safely use the distance formula
@@ -48,13 +48,13 @@ gridy = np.linspace(utm_y.min(), utm_y.max(), num_points)
 gridz = np.linspace(depth.min(), depth.max(), num_points)
 
 
-#z scale of 10, this means moisture vertically changes 10 times faster than horizontally 
+
 ok3d = OrdinaryKriging3D(
     utm_x, 
     utm_y, 
     depth, 
     moisture, 
-    anisotropy_scaling_z=10,
+    anisotropy_scaling_z=0.1 #assumes vertical change is 10x horizontal change,
     variogram_model="exponential",
    
 )
@@ -62,15 +62,17 @@ ok3d.display_variogram_model()
 
 k3d1, ss3d = ok3d.execute("grid", gridx, gridy, gridz)
 
-zg, yg, xg = np.meshgrid(gridz, gridy, gridx, indexing="ij")
 fig, axes = plt.subplots(2, 3, figsize=(18, 10))
 
 
 
-print("All depths must be between (in centimeters) ", depth.min(), " and ", depth.max())
+print("All depths must be between (in centimeters) ", 100*depth.min(), " and ", 100*depth.max())
 entered_depth_1 = float(input("Enter depth for the first slicing: "))
 entered_depth_2 = float(input("Enter depth for the second slicing: "))
 entered_depth_3 = float(input("Enter depth for the third slicing: "))
+entered_depth_1 /=100
+entered_depth_2 /=100 
+entered_depth_3 /=100
 ind1 = int(round((entered_depth_1 - depth.min()) / ((depth.max() - depth.min()) / (num_points - 1))))
 ind2 = int(round((entered_depth_2 - depth.min()) / ((depth.max() - depth.min()) / (num_points - 1))))
 ind3 = int(round((entered_depth_3 - depth.min()) / ((depth.max() - depth.min()) / (num_points - 1))))
