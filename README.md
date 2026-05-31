@@ -9,7 +9,7 @@ We are working toward ISEF qualification with our 2027 extension project!
 
 * **Last year's project video:** [tinyurl.com/agrabhiyear1](https://tinyurl.com/agrabhiyear1)
 * **This year's plan video:** [tinyurl.com/agrabhi27plan](https://tinyurl.com/agrabhi27plan)
-* **Project Website:** [nathan-sharma.github.io/agrabhi-website/](https://nathan-sharma.github.io/agrabhi-website/)
+* **Project Website:** [agrabhi.com](https://agrabhi.com)
 
 
 #### 1. Drone to Rovers
