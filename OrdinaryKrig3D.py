@@ -54,7 +54,7 @@ ok3d = OrdinaryKriging3D(
     utm_y, 
     depth, 
     moisture, 
-    anisotropy_scaling_z=0.1, #assumes vertical change is 10x horizontal change
+    anisotropy_scaling_z=100 #should be greater than 1, since z values are smaller relative to x and y values, we need to stretch them!!
     variogram_model="exponential",
    
 )
