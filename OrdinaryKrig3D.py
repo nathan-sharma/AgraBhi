@@ -28,8 +28,6 @@ data = np.array( #this is fake data to test it. ALSO, get data at every centimet
     ]
 )
 
-
-
 lat = data[:, 0] 
 lon = data[:, 1] 
 moisture = data[:, 3] 
@@ -106,119 +104,6 @@ fig.colorbar(im, ax=axes[0, :].tolist(), label="Predicted Moisture (%)")
 fig.colorbar(im2, ax=axes[1, :].tolist(), label="GPR Variance")
 
 plt.show()
-
-#this is plotting the entire 3d cube
-
-print("\nGenerating stylized interactive 3D volumetric plot...")
-
-
-zg_mesh, yg_mesh, xg_mesh = np.meshgrid(gridz, gridy, gridx, indexing="ij")
-
-x_flat = xg_mesh.flatten()
-y_flat = yg_mesh.flatten()
-z_flat = zg_mesh.flatten()  
-values_flat = k3d1.flatten()
-
-fig_3d = go.Figure()
-
-fig_3d.add_trace(
-    go.Volume(
-        x=x_flat,
-        y=y_flat,
-        z=z_flat,
-        value=values_flat,
-        isomin=values_flat.min(),
-        isomax=values_flat.max(),
-        opacity=0.7,
-        surface_count=45,
-        colorscale="Turbo",
-        caps=dict(
-            x_show=False,
-            y_show=False,
-            z_show=False
-        ),
-        colorbar=dict(title="Soil Moisture (%)")
-    )
-)
-
-
-fig_3d.add_trace(
-    go.Scatter3d(
-        x=utm_x,
-        y=utm_y,
-        z=depth,
-        mode="markers",
-        marker=dict(
-            size=4,
-            color=moisture,
-            colorscale="Turbo",
-            line=dict(color='black', width=1)  
-        ),
-        name="Samples"
-    )
-)
-fig_3d.update_layout(
-    title="3D Moisture Simulation",
-    autosize=True,
-    scene=dict(
-        domain=dict(
-            x=[0, 1],
-            y=[0, 1]
-        ),
-        xaxis=dict(
-            visible=False,
-            range=[utm_x.min(), utm_x.max()]
-        ),
-        yaxis=dict(
-            visible=False,
-            range=[utm_y.min(), utm_y.max()]
-        ),
-        zaxis=dict(
-            title="Depth (m)",
-            autorange="reversed", 
-            range=[depth.max(), depth.min()]
-        ),
-        aspectmode="manual",
-        aspectratio=dict(
-            x=1,
-            y=1,
-            z=0.45
-        ),
-        bgcolor="rgb(92,64,51)",
-        camera=dict(
-            center=dict(
-                x=0,
-                y=0,
-                z=0
-            ),
-            eye=dict(
-                x=1.45,
-                y=1.45,
-                z=0.9
-            ),
-            up=dict(
-                x=0,
-                y=0,
-                z=1
-            ),
-            projection=dict(
-                type="perspective"
-            )
-        )
-    ),
-    paper_bgcolor="rgb(92,64,51)",
-    plot_bgcolor="rgb(92,64,51)",
-    font=dict(color="white"),
-    margin=dict(
-        l=0,
-        r=0,
-        t=60,
-        b=0
-    ),
-    width=1400,
-    height=900
-)
-fig_3d.show()
 
 raw_lat = float(input("Enter latitude: "))
 raw_lon = float(input("Enter longitude: "))
