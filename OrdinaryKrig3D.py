@@ -6,7 +6,7 @@ from pykrige.ok3d import OrdinaryKriging3D
 from pyproj import CRS, Transformer
 import plotly.graph_objects as go
 
-data = np.array( #this is fake data to test it. ALSO, get data at every centimeter, dont do increments of 5 bc then its too uncertain
+data = np.array( #this is fake data to test it. ALSO, dont do increments of 5 bc then its too uncertain, do smaller increments when actually collecting in the field
     
     [
         [27.59422, -97.89437, 1, 9.8],
@@ -54,7 +54,7 @@ ok3d = OrdinaryKriging3D(
     utm_y, 
     depth, 
     moisture, 
-    anisotropy_scaling_z=0.1 #assumes vertical change is 10x horizontal change,
+    anisotropy_scaling_z=0.1, #assumes vertical change is 10x horizontal change
     variogram_model="exponential",
    
 )
