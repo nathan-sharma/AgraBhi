@@ -55,7 +55,7 @@ ok3d = OrdinaryKriging3D(
     depth, 
     moisture, 
     anisotropy_scaling_z=500, #should be greater than 1, since z values are smaller relative to x and y values.
-    variogram_model="exponential",
+    variogram_model="spherical",
    
 )
 ok3d.display_variogram_model()
