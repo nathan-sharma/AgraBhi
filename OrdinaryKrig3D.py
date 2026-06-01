@@ -86,7 +86,9 @@ for i, idx in enumerate(slice_indices):
         slice_data, 
         extent=[gridx.min(), gridx.max(), gridy.min(), gridy.max()],
         origin='lower', 
-        cmap='viridis'
+        cmap='viridis', 
+        vmin = 10.0, 
+        vmax = 14.0
     )
     axes[0,i].set_title(f"Depth (Z) Slice = {gridz[idx]:.2f}")
     axes[0,i].set_xlabel("UTM Easting (meters)")
@@ -96,7 +98,9 @@ for i, idx in enumerate(slice_indices):
         variance_slice_data, 
         extent=[gridx.min(), gridx.max(), gridy.min(), gridy.max()],
         origin='lower', 
-        cmap='inferno'
+        cmap='inferno', 
+        vmin = 0, 
+        vmax = 7.0
     )
     axes[1,i].set_title(f"Uncertainty at Depth (Z) Slice = {gridz[idx]:.2f}")
     axes[1,i].set_xlabel("UTM Easting (meters)")
