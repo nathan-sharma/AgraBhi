@@ -1,10 +1,3 @@
-This project won in the **Senior Division** of the **Environmental Engineering** category at two science fairs:
-
-* 🥈 **2nd Place** at the 2026 Science and Engineering Fair of Houston
-* 🥉 **3rd Place** at the 2026 Texas Science and Engineering Fair (**State Finalist**)
-
-We are working toward ISEF qualification with our 2027 extension project!
-
 ## About AgraBhi 2026-27 (Year 2/3)
 
 * **Last year's project video:** [tinyurl.com/agrabhiyear1](https://tinyurl.com/agrabhiyear1)
