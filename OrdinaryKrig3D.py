@@ -6,7 +6,7 @@ from pykrige.ok3d import OrdinaryKriging3D
 from pyproj import CRS, Transformer
 import plotly.graph_objects as go
 
-data = np.array( #this is fake data to test it. ALSO, dont do increments of 5 bc then its too uncertain, do smaller increments when actually collecting in the field
+data = np.array( #this is fake data to test it. 
     
     [
         [27.59422, -97.89437, 1, 9.8],
@@ -118,7 +118,7 @@ user_utm_x, user_utm_y = transformer.transform(raw_lon, raw_lat)
 
 target_x = np.array([user_utm_x])
 target_y = np.array([user_utm_y])
-target_z = np.array([depth.min()]) #we only care about the shallowest level here
+target_z = np.array(0.05) #specific depth for predicted moisture at the user inputted location
 
 predicted_moisture, kriging_variance = ok3d.execute(
     "points", 
