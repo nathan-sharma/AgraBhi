@@ -54,7 +54,7 @@ def calculate_optimal_target():
         utm_y, 
         depth, 
         moisture, 
-        anisotropy_scaling_z=500, #should be greater than 1, since z values are smaller relative to x and y values.
+        anisotropy_scaling_z=500, #should be greater than 1, since z values are smaller relative to x and y values. CHANGE THIS LATER AFTER FARM, ACQUISITION FUNCTION ISN'T AFFECTED BY WHAT THIS IS IT DOESN'T MATTER UNTIL YOU GET HOME.
         variogram_model="gaussian",
     )
 
