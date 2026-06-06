@@ -1,5 +1,7 @@
 ## About AgraBhi 2026-27 (Year 2/3)
 
+Members: Nathan Sharma, Naitik Patel, Landon Morrison
+
 * **Last year's project video:** [tinyurl.com/agrabhiyear1](https://tinyurl.com/agrabhiyear1)
 * **This year's plan video:** [tinyurl.com/agrabhi27plan](https://tinyurl.com/agrabhi27plan)
 * **Project Website:** [agrabhi.com](https://agrabhi.com)
@@ -14,4 +16,3 @@ Rather than simply taking a single measurement at points, the rovers will take m
 #### 3. Adaptive Path Planning
 We think our rovers can improve their own predictive accuracy by driving to the highest uncertainty areas in its predictions in real time. For example, the system could start with an initial set of moisture measurements across the field, generate a heatmap, then tell each rover to go to the most uncertain point on this heatmap and take a measurement there, repeating the process until accuracy is significantly improved and uncertainty is evenly distributed.
 
-This project will also be competing in high school science fairs!
