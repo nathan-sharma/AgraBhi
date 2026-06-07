@@ -118,7 +118,7 @@ user_utm_x, user_utm_y = transformer.transform(raw_lon, raw_lat)
 
 target_x = np.array([user_utm_x])
 target_y = np.array([user_utm_y])
-target_z = np.array(0.05) #specific depth for predicted moisture at the user inputted location
+target_z = np.array(0.05) 
 
 predicted_moisture, kriging_variance = ok3d.execute(
     "points", 
