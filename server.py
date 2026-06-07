@@ -1,11 +1,22 @@
 import serial
 import pynmea2
 import time
-import os
+import os 
+import math
 import pandas as pd
 from flask import Flask, jsonify, request, send_file
-from flask_cors import CORS
-from acquisitionfunc import calculate_optimal_target
+from flask_cors import CORS 
+from acquisitionfunc import calculate_optimal_target, predict_moisture_at_location, calculate_swarm_targets
+
+rover_battery = 100.0 
+
+swarm_rovers = {
+    "Rover_1": {"lat": 27.59413, "lon": -97.89429, "battery": 100.0},
+    "Rover_2": {"lat": 27.59415, "lon": -97.89435, "battery": 100.0},
+    "Rover_3": {"lat": 27.59418, "lon": -97.89440, "battery": 100.0},
+    "Rover_4": {"lat": 27.59420, "lon": -97.89445, "battery": 100.0},
+    "Rover_5": {"lat": 27.59422, "lon": -97.89450, "battery": 100.0}
+}
 
 app = Flask(__name__)
 CORS(app)
@@ -17,6 +28,22 @@ try:
 except Exception as e:
     print(f"Can't connect properly to the arduino {e}")
     serArduino = serGps = None
+
+def _calculate_haversine_decay(current_lat, current_lon, target_lat, target_lon):
+
+    R = 6371000 
+    phi1 = math.radians(current_lat)
+    phi2 = math.radians(target_lat)
+    delta_phi = math.radians(target_lat - current_lat)
+    delta_lambda = math.radians(target_lon - current_lon)
+    
+    a = (math.sin(delta_phi / 2) ** 2 + 
+         math.cos(phi1) * math.cos(phi2) * math.sin(delta_lambda / 2) ** 2)
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+    distance_meters = R * c 
+    
+    battery_lost = (110 * distance_meters) / 99.0
+    return distance_meters, battery_lost
 
 def read_gps_with_accuracy():
     if not serGps:
@@ -32,7 +59,6 @@ def read_gps_with_accuracy():
     except Exception as e:
         print(f"GPS won't work {e}")
     return None, None
-
 
 def read_arduino_sensors():
     default_vals = (0.0, 0.0)
@@ -51,11 +77,9 @@ def read_arduino_sensors():
         print(f"Arduino won't work {e}")
     return default_vals
 
-
 @app.route("/get_latest_point", methods=["GET"])
 def get_latest_point():
     return jsonify({"status": "ready"}), 200
-
 
 @app.route("/collect", methods=["GET"])
 def collect():
@@ -68,6 +92,31 @@ def collect():
         "temperature": temperature
     })
 
+
+@app.route("/update_swarm_positions", methods=["POST"])
+def update_swarm_positions():
+    global swarm_rovers
+    try:
+        data = request.json
+        if not data or "swarm_data" not in data:
+            return jsonify({"status": "error", "message": "Missing swarm data configuration blueprint."}), 400
+        
+        incoming_swarm = data["swarm_data"]
+        
+ 
+        for rover_id in swarm_rovers.keys():
+            if rover_id in incoming_swarm:
+                swarm_rovers[rover_id]["lat"] = float(incoming_swarm[rover_id]["lat"])
+                swarm_rovers[rover_id]["lon"] = float(incoming_swarm[rover_id]["lon"])
+                swarm_rovers[rover_id]["battery"] = float(incoming_swarm[rover_id]["battery"])
+                
+        return jsonify({
+            "status": "success",
+            "message": "Global swarm state tracker synchronized successfully!",
+            "current_state": swarm_rovers
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Sync processing failure: {str(e)}"}), 500
 
 @app.route("/log", methods=["GET"])
 def log_data():
@@ -107,23 +156,41 @@ def log_data():
     else:
         df_new.to_csv(CSV_PATH, mode='a', header=False, index=False)
 
-
     return jsonify({
         "status": "success",
         "new_point": [next_id, lat, lon, depth_cm, moisture, temperature]
     })
 
+@app.route("/update_battery", methods=["POST"])
+def update_battery():
+    global rover_battery
+    data = request.json
+    try:
+        new_lat = float(data.get("lat"))
+        new_lon = float(data.get("lon"))
+        current_lat = 27.59413
+        current_lon = -97.89429
+        
+        distance_meters, battery_lost = _calculate_haversine_decay(current_lat, current_lon, new_lat, new_lon)
+        rover_battery = max(0.0, rover_battery - battery_lost)
+        
+        return jsonify({
+            "status": "success",
+            "distance_moved_m": round(distance_meters, 2),
+            "battery_lost_pct": round(battery_lost, 2),
+            "current_battery": round(rover_battery, 2)
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Battery processing failure: {str(e)}"}), 400
 
 @app.route("/optimal_point", methods=["GET"])
 def get_optimal_point():
     try:
-        optimal_results = calculate_optimal_target()
-        
-
+        optimal_results = calculate_optimal_target(battery_pct=rover_battery)
         if optimal_results is None:
             return jsonify({
                 "status": "error",
-                "message": "You don't have enough data."
+                "message": "Insufficient data. Ensure you have at least 3 logged points with valid GPS locks."
             }), 400
             
         return jsonify({
@@ -132,17 +199,47 @@ def get_optimal_point():
         })
     except Exception as e:
         print(f"Failed while calculating best pt {e}")
+        return jsonify({"status": "error", "message": f"Failed: {str(e)}"}), 500
+
+@app.route("/swarm_optimal_point", methods=["GET"])
+def get_swarm_optimal_point():
+
+    global swarm_rovers
+    try:
+        swarm_output = calculate_swarm_targets(swarm_rovers)
+        if swarm_output is None:
+            return jsonify({
+                "status": "error",
+                "message": "Insufficient baseline data. Log your 15 randomly scattered field points first."
+            }), 400
+
+        for r_id, results in swarm_output.items():
+            current_lat = swarm_rovers[r_id]["lat"]
+            current_lon = swarm_rovers[r_id]["lon"]
+            target_lat = results["target_lat"]
+            target_lon = results["target_lon"]
+
+            dist, drain = _calculate_haversine_decay(current_lat, current_lon, target_lat, target_lon)
+            
+            swarm_rovers[r_id]["battery"] = max(0.0, swarm_rovers[r_id]["battery"] - drain)
+            swarm_rovers[r_id]["lat"] = target_lat
+            swarm_rovers[r_id]["lon"] = target_lon
+            swarm_output[r_id]["distance_m"] = round(dist, 2)
+            swarm_output[r_id]["drain_pct"] = round(drain, 2)
+            swarm_output[r_id]["remaining_battery"] = round(swarm_rovers[r_id]["battery"], 2)
+
         return jsonify({
-            "status": "error",
-            "message": f"Failed: {str(e)}"
-        }), 500
+            "status": "success",
+            "swarm_assignments": swarm_output
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Swarm compute failure: {str(e)}"}), 500
 
 @app.route("/view_logs", methods=["GET"])
 def view_logs():
     if os.path.exists(CSV_PATH):
         return send_file(CSV_PATH, as_attachment=True, download_name="data.csv")
     return "No logging index initialized yet.", 404
-
 
 @app.route("/clear_logs", methods=["GET"])
 def clear_logs():
@@ -153,6 +250,29 @@ def clear_logs():
     except Exception as e:
         return f"Couldn't erase: {e}", 500
 
+@app.route("/predict_point", methods=["POST"])
+def handle_predict_point():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"status": "error", "message": "Missing JSON payload"}), 400
+        target_lat = float(data.get("lat"))
+        target_lon = float(data.get("lon"))
+        
+        predicted_moisture = predict_moisture_at_location(target_lat, target_lon)
+        if predicted_moisture is None:
+            return jsonify({"status": "error", "message": "Prediction failed. Verify data.csv exists."}), 400
+            
+        return jsonify({
+            "status": "success",
+            "lat": target_lat,
+            "lon": target_lon,
+            "predicted_moisture_pct": round(predicted_moisture, 2)
+        })
+    except ValueError:
+        return jsonify({"status": "error", "message": "Invalid latitude or longitude format formatting values."}), 400
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Server processing error: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
