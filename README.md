@@ -1,4 +1,4 @@
-## About AgraBhi 2026-27 (Year 2/3)
+## About AgraBhi 2026-27 (Year 2)
 
 Members: Nathan Sharma (team lead), Naitik Patel, Landon Morrison
 
