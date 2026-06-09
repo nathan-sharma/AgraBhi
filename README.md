@@ -1,10 +1,10 @@
 ## About AgraBhi 2026-27 (Year 2/3)
 
-Members: Nathan Sharma, Naitik Patel, Landon Morrison
+Members: Nathan Sharma (team lead), Naitik Patel, Landon Morrison
 
 * **Last year's project video:** [tinyurl.com/agrabhiyear1](https://tinyurl.com/agrabhiyear1)
 * **This year's plan video:** [tinyurl.com/agrabhi27plan](https://tinyurl.com/agrabhi27plan)
-* **Project Website:** [agrabhi.com](https://agrabhi.com) (temporarily down for privacy reasons)
+* **Project Website:** [agrabhi.com](https://agrabhi.com) (temporarily down due to privacy reasons, will be officially back up in December)
 
 
 #### 1. Drone to Rovers
