@@ -42,7 +42,7 @@ def _calculate_haversine_decay(current_lat, current_lon, target_lat, target_lon)
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
     distance_meters = R * c 
     
-    battery_lost = (4590 - distance_meters)/4590
+    battery_lost = 100*distance_meters/4590
     return distance_meters, battery_lost
 
 def read_gps_with_accuracy():
