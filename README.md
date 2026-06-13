@@ -3,7 +3,6 @@
 Members: Nathan Sharma (team lead), Naitik Patel, Landon Morrison
 
 * **Last year's project video:** [tinyurl.com/agrabhiyear1](https://tinyurl.com/agrabhiyear1)
-* **This year's plan video:** [tinyurl.com/agrabhi27plan](https://tinyurl.com/agrabhi27plan)
 * **Project Website:** [agrabhi.com](https://agrabhi.com) (temporarily down for privacy reasons)
 
 
