@@ -9,13 +9,16 @@ from flask_cors import CORS
 from acquisitionfunc import calculate_optimal_target, predict_moisture_at_location, calculate_swarm_targets
 
 rover_battery = 100.0 
+acquisition_alpha = 0.8
+active_variogram_model = "gaussian"
 
+# --- Global Swarm Swarm Tracking Registry Objects ---
 swarm_rovers = {
-    "Rover_1": {"lat": 27.59413, "lon": -97.89429, "battery": 100.0},
-    "Rover_2": {"lat": 27.59415, "lon": -97.89435, "battery": 100.0},
-    "Rover_3": {"lat": 27.59418, "lon": -97.89440, "battery": 100.0},
-    "Rover_4": {"lat": 27.59420, "lon": -97.89445, "battery": 100.0},
-    "Rover_5": {"lat": 27.59422, "lon": -97.89450, "battery": 100.0}
+    "Rover_1": {"lat": 27.59613, "lon": -97.89477, "battery": 90},
+    "Rover_2": {"lat": 27.59641 , "lon": -97.89375, "battery": 90},
+    "Rover_3": {"lat": 27.59675, "lon": -97.89415, "battery": 90},
+    "Rover_4": {"lat": 27.59693, "lon": -97.8932, "battery": 90},
+    "Rover_5": {"lat": 27.59702, "lon": -97.89211, "battery": 90}
 }
 
 app = Flask(__name__)
@@ -30,7 +33,6 @@ except Exception as e:
     serArduino = serGps = None
 
 def _calculate_haversine_decay(current_lat, current_lon, target_lat, target_lon):
-
     R = 6371000 
     phi1 = math.radians(current_lat)
     phi2 = math.radians(target_lat)
@@ -93,31 +95,6 @@ def collect():
     })
 
 
-@app.route("/update_swarm_positions", methods=["POST"])
-def update_swarm_positions():
-    global swarm_rovers
-    try:
-        data = request.json
-        if not data or "swarm_data" not in data:
-            return jsonify({"status": "error", "message": "Missing swarm data configuration blueprint."}), 400
-        
-        incoming_swarm = data["swarm_data"]
-        
- 
-        for rover_id in swarm_rovers.keys():
-            if rover_id in incoming_swarm:
-                swarm_rovers[rover_id]["lat"] = float(incoming_swarm[rover_id]["lat"])
-                swarm_rovers[rover_id]["lon"] = float(incoming_swarm[rover_id]["lon"])
-                swarm_rovers[rover_id]["battery"] = float(incoming_swarm[rover_id]["battery"])
-                
-        return jsonify({
-            "status": "success",
-            "message": "Global swarm state tracker synchronized successfully!",
-            "current_state": swarm_rovers
-        })
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Sync processing failure: {str(e)}"}), 500
-
 @app.route("/log", methods=["GET"])
 def log_data():
     lat, lon = read_gps_with_accuracy()
@@ -161,6 +138,30 @@ def log_data():
         "new_point": [next_id, lat, lon, depth_cm, moisture, temperature]
     })
 
+
+
+@app.route("/update_swarm_positions", methods=["POST"])
+def update_swarm_positions():
+    global swarm_rovers
+    try:
+        data = request.json
+        if not data or "swarm_data" not in data:
+            return jsonify({"status": "error", "message": "Missing swarm data configuration blueprint."}), 400
+        
+        incoming_swarm = data["swarm_data"]
+        for rover_id in swarm_rovers.keys():
+            if rover_id in incoming_swarm:
+                swarm_rovers[rover_id]["lat"] = float(str(incoming_swarm[rover_id]["lat"]).strip())
+                swarm_rovers[rover_id]["lon"] = float(str(incoming_swarm[rover_id]["lon"]).strip())
+                swarm_rovers[rover_id]["battery"] = float(str(incoming_swarm[rover_id]["battery"]).strip())
+                
+        return jsonify({
+            "status": "success",
+            "message": "Global swarm state tracker synchronized successfully!",
+            "current_state": swarm_rovers
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Sync processing failure: {str(e)}"}), 500
 @app.route("/update_battery", methods=["POST"])
 def update_battery():
     global rover_battery
@@ -186,11 +187,11 @@ def update_battery():
 @app.route("/optimal_point", methods=["GET"])
 def get_optimal_point():
     try:
-        optimal_results = calculate_optimal_target(battery_pct=rover_battery)
+        optimal_results = calculate_optimal_target(battery_pct=rover_battery, a=acquisition_alpha, model=active_variogram_model)
         if optimal_results is None:
             return jsonify({
                 "status": "error",
-                "message": "Insufficient data. Ensure you have at least 3 logged points with valid GPS locks."
+                "message": "Not enough data. Make sure you have 3+ points."
             }), 400
             
         return jsonify({
@@ -203,16 +204,17 @@ def get_optimal_point():
 
 @app.route("/swarm_optimal_point", methods=["GET"])
 def get_swarm_optimal_point():
-
     global swarm_rovers
     try:
-        swarm_output = calculate_swarm_targets(swarm_rovers)
+        swarm_output = calculate_swarm_targets(swarm_rovers, a=acquisition_alpha, model=active_variogram_model)
+        
         if swarm_output is None:
             return jsonify({
                 "status": "error",
                 "message": "Insufficient baseline data. Log your 15 randomly scattered field points first."
             }), 400
-
+        pure_lags = swarm_output["Rover_1"].get("variogram_lags", [])
+        pure_variances = swarm_output["Rover_1"].get("variogram_values", [])
         for r_id, results in swarm_output.items():
             current_lat = swarm_rovers[r_id]["lat"]
             current_lon = swarm_rovers[r_id]["lon"]
@@ -220,7 +222,7 @@ def get_swarm_optimal_point():
             target_lon = results["target_lon"]
 
             dist, drain = _calculate_haversine_decay(current_lat, current_lon, target_lat, target_lon)
-            
+        
             swarm_rovers[r_id]["battery"] = max(0.0, swarm_rovers[r_id]["battery"] - drain)
             swarm_rovers[r_id]["lat"] = target_lat
             swarm_rovers[r_id]["lon"] = target_lon
@@ -230,7 +232,12 @@ def get_swarm_optimal_point():
 
         return jsonify({
             "status": "success",
-            "swarm_assignments": swarm_output
+            "swarm_assignments": swarm_output, 
+           "mean_kriging_variance": swarm_output["Rover_1"]["mean_kriging_variance"],
+          "variogram": {
+                "lags": pure_lags,
+                "values": pure_variances
+            }
         })
     except Exception as e:
         return jsonify({"status": "error", "message": f"Swarm compute failure: {str(e)}"}), 500
@@ -258,8 +265,7 @@ def handle_predict_point():
             return jsonify({"status": "error", "message": "Missing JSON payload"}), 400
         target_lat = float(data.get("lat"))
         target_lon = float(data.get("lon"))
-        
-        predicted_moisture = predict_moisture_at_location(target_lat, target_lon)
+        predicted_moisture = predict_moisture_at_location(target_lat, target_lon, variogram_model=active_variogram_model)
         if predicted_moisture is None:
             return jsonify({"status": "error", "message": "Prediction failed. Verify data.csv exists."}), 400
             
@@ -267,12 +273,82 @@ def handle_predict_point():
             "status": "success",
             "lat": target_lat,
             "lon": target_lon,
-            "predicted_moisture_pct": round(predicted_moisture, 2)
+            "predicted_moisture_pct": round(predicted_moisture, 2) 
         })
     except ValueError:
         return jsonify({"status": "error", "message": "Invalid latitude or longitude format formatting values."}), 400
     except Exception as e:
         return jsonify({"status": "error", "message": f"Server processing error: {str(e)}"}), 500
+
+@app.route("/get_system_specs", methods=["GET"])
+def get_system_specs():
+    home_lat = 27.59496
+    home_lon = -97.89311
+    field_diagonal_meters = 275
+    
+    return jsonify({
+        "status": "success",
+        "specs": {
+            "home": {
+                "lat": home_lat,
+                "lon": home_lon
+            },
+            "field_diagonal_meters": field_diagonal_meters,
+            "swarm_fleet_status": swarm_rovers  # Pulls your active dictionary tracking all 5 rovers
+        }
+    }), 200
+
+@app.route("/update_alpha", methods=["POST"])
+def update_alpha():
+    global acquisition_alpha
+    try:
+        data = request.json
+        if not data or "alpha" not in data:
+            return jsonify({"status": "error", "message": "Missing alpha parameter."}), 400
+        
+        new_alpha = float(data["alpha"])
+        
+        # Keep alpha safe between 0.0 and 1.0
+        if not (0.0 <= new_alpha <= 1.0):
+            return jsonify({"status": "error", "message": "Alpha must be between 0.0 and 1.0"}), 400
+            
+        acquisition_alpha = new_alpha
+        print(f"Alpha is now: {acquisition_alpha}")
+        
+        return jsonify({
+            "status": "success", 
+            "message": "Alpha updated successfully!",
+            "current_alpha": acquisition_alpha
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
+@app.route("/update_variogram", methods=["POST"])
+def update_variogram():
+    global active_variogram_model
+    try:
+        data = request.json
+        if not data or "model" not in data:
+            return jsonify({"status": "error", "message": "Missing model target selection."}), 400
+        
+        chosen_model = str(data["model"]).lower().strip()
+        valid_models = ["gaussian", "exponential", "spherical", "linear"]
+        if chosen_model not in valid_models:
+            return jsonify({"status": "error", "message": f"Invalid model. Must be one of {valid_models}"}), 400
+            
+        active_variogram_model = chosen_model
+        print(f"New Variogram {active_variogram_model}")
+        
+        return jsonify({
+            "status": "success", 
+            "message": "Variogram model updated successfully!",
+            "current_model": active_variogram_model
+        })
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000, debug=False)
