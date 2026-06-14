@@ -1,22 +1,19 @@
 from pyproj import CRS, Transformer
 import matplotlib.pyplot as plt
 import numpy as np
-
 import pykrige.kriging_tools as kt
 from pykrige.ok import OrdinaryKriging
 
-data = np.array(
-    [
-#we'll paste our farm data in here
-
-]
-
-    
-)
+data = np.genfromtxt('data.csv', delimiter=',', skip_header=1)
 num_points = 80
 depth = int(input("Enter a depth to see the heatmap for: "))
+
 condition = (data[:, 3] == depth)
 filtered_data = data[condition]
+if len(filtered_data) == 0:
+    print(f"No data found for depth {depth}cm!")
+    exit()
+
 lat = filtered_data[:,1]
 lon = filtered_data[:,2]
 moisture = filtered_data[:,4]
@@ -35,7 +32,7 @@ OK = OrdinaryKriging(
    utm_x, 
    utm_y, 
    moisture,
-    variogram_model="gaussian",
+    variogram_model="spherical",
     verbose=False,
     enable_plotting=True,
 )
@@ -44,6 +41,8 @@ OK = OrdinaryKriging(
 
 z, ss = OK.execute("grid", gridx, gridy)
 
+mean_variance = np.mean(ss) 
+print(mean_variance)
 raw_lat = float(input("Enter latitude: "))
 raw_lon = float(input("Enter longitude: "))
 
