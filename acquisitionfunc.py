@@ -4,20 +4,25 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
-import matplotlib.colors as mcolors
-from pykrige.ok3d import OrdinaryKriging3D
+import matplotlib.colors as  mcolors
+from pykrige.ok import OrdinaryKriging
 from pyproj import CRS, Transformer
 import math
 import pandas as pd
 
 CSV_PATH = os.path.expanduser("~/Drone/drone_app/data.csv")
 
-def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_pos_lon):
-    lat = data_matrix[:, 0] 
-    lon = data_matrix[:, 1] 
-    moisture = data_matrix[:, 3] 
-    depth = data_matrix[:, 2] / 100.0
-    num_points = 50 
+def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_pos_lon, a=0.8, model="gaussian"):
+    mask_5cm = (data_matrix[:, 2] == 5)
+    filtered_data = data_matrix[mask_5cm]
+    if len(filtered_data) < 3:
+        raise ValueError("Cannot calculate 2D Kriging: Less than 3 data points found at 5cm depth.")
+
+    lat = filtered_data[:, 0] 
+    lon = filtered_data[:, 1] 
+    moisture = filtered_data[:, 3] 
+    num_points = 80
+
     mean_lon = np.mean(lon)
     mean_lat = np.mean(lat)
     utm_zone = int((mean_lon + 180) / 6) + 1
@@ -28,42 +33,25 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
     utm_x, utm_y = transformer.transform(lon, lat)
     gridx = np.linspace(utm_x.min(), utm_x.max(), num_points)
     gridy = np.linspace(utm_y.min(), utm_y.max(), num_points)
-    gridz = np.linspace(depth.min(), depth.max(), num_points)
-
-    ok3d = OrdinaryKriging3D(
+    ok2d = OrdinaryKriging(
         utm_x, 
         utm_y, 
-        depth, 
         moisture, 
-        anisotropy_scaling_z=500,
-        variogram_model="gaussian",
+        variogram_model=model,
+        verbose=False,
+        enable_plotting=False
     )
 
-    k3d1, ss3d = ok3d.execute("grid", gridx, gridy, gridz)
-    target_depth = 0.05
-    depth_idx = int(round((target_depth - depth.min()) / ((depth.max() - depth.min()) / (num_points - 1))))
-    variance_slice = ss3d[depth_idx, :, :]
-    max_variance = np.max(variance_slice)
-    min_variance = np.min(variance_slice)
+    k2d_predicted, kriging_variance_grid = ok2d.execute("grid", gridx, gridy)
+    mean_kriging_variance = np.mean(kriging_variance_grid) 
+    max_variance = np.max(kriging_variance_grid)
+    min_variance = np.min(kriging_variance_grid)
+    _, unique_idx = np.unique(filtered_data[:, :2], axis=0, return_index=True)
+    clean_5cm_data = filtered_data[unique_idx]
+    unique_utm_x, unique_utm_y = transformer.transform(clean_5cm_data[:, 1], clean_5cm_data[:, 0])
+    unique_moisture_vals = clean_5cm_data[:, 3]
 
-    gps_coords = data_matrix[:, :2]
-    N = 2
-    _, unique_indices = np.unique(gps_coords, axis=0, return_index=True)
-    unique_indices = np.sort(unique_indices)
-    unique_utm_x = utm_x[unique_indices]
-    unique_utm_y = utm_y[unique_indices]
-
-    unique_moisture_vals = []
-    for idx in unique_indices:
-        lat_val = data_matrix[idx, 0]
-        lon_val = data_matrix[idx, 1]
-        row = np.where((data_matrix[:, 0] == lat_val) & (data_matrix[:, 1] == lon_val) & (data_matrix[:, 2] == 5))[0]
-        if len(row) > 0:
-            unique_moisture_vals.append(data_matrix[row[0], 3])
-        else:
-            unique_moisture_vals.append(data_matrix[idx, 3])
-            
-    unique_moisture_vals = np.array(unique_moisture_vals)
+    N = 5 #moisture variance of N closest points, we can change this here
 
     all_grid_variances = []
     for current_y in gridy:
@@ -83,21 +71,25 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
     if global_max_variance == global_min_variance:
         global_max_variance += 1e-6
 
-    home_lat = 27.59437
-    home_lon = -97.89413
+    home_lat = 27.59496
+    home_lon = -97.89311
     home_utm_x, home_utm_y = transformer.transform(home_lon, home_lat)
 
     rover_utm_x, rover_utm_y = transformer.transform(rover_pos_lon, rover_pos_lat)
 
-    field_diagonal = 38.0
-    gamma = 0.0008 
-    target_z_value = 0.05
-
-    _, ss3d_full = ok3d.execute("grid", gridx, gridy, np.array([target_z_value]))
-    kriging_variance_grid = ss3d_full[0, :, :]
-
+    field_diagonal = 275
+    gamma = 0.000024 
     best_acquisition = -float('inf')
     best_pixel_coords = (None, None) 
+    best_components = {
+        "kriging_var": 0.0,
+        "raw_moisture_var": 0.0,
+        "rbf_kernel": 0.0,
+        "moisture_var_rbf": 0.0,
+        "battery_distance_penalty": 0.0,
+        "raw_kriging_var": 0.0, 
+       "unscaled_moisture_var": 0.0,
+    }
 
     for y_idx, current_y in enumerate(gridy):
         for x_idx, current_x in enumerate(gridx):
@@ -117,7 +109,10 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
             else:
                 moisture_variance = 0.0
                 
-            normalized_moisture_variance = (moisture_variance - global_min_variance) / (global_max_variance - global_min_variance)
+            if (global_max_variance - global_min_variance) == 0:
+                normalized_moisture_variance = 0.0
+            else:
+                normalized_moisture_variance = (moisture_variance - global_min_variance) / (global_max_variance - global_min_variance)
         
             if normalized_kriging_variance > 1.001:
                 continue
@@ -131,70 +126,95 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
             home_distance = math.sqrt((current_x - home_utm_x)**2 + (current_y - home_utm_y)**2)
             rover_distance = math.sqrt((current_x - rover_utm_x)**2 + (current_y - rover_utm_y)**2)
             
-            acquisition_value = (
-                normalized_kriging_variance + 
-                (normalized_moisture_variance * rbf_kernel_value) - 
-                ((100 - battery_pct) / 100.0) * (rover_distance + home_distance) / (2.0 * field_diagonal)
-            )
+            comp_kriging = normalized_kriging_variance
+            comp_moisture_rbf = normalized_moisture_variance
+            comp_penalty = ((100 - battery_pct) / 100.0) * (rover_distance + home_distance) / (2.0 * field_diagonal)
+
+            acquisition_value = a*comp_kriging + (1-a)*comp_moisture_rbf
             
             if acquisition_value > best_acquisition:
                 best_acquisition = acquisition_value
                 best_pixel_coords = (current_x, current_y)
-
+                best_components["kriging_var"] = comp_kriging
+                best_components["raw_moisture_var"] = normalized_moisture_variance
+                best_components["rbf_kernel"] = rbf_kernel_value
+                best_components["moisture_var_rbf"] = comp_moisture_rbf
+                best_components["battery_distance_penalty"] = comp_penalty
+                best_components["raw_kriging_var"] = point_variance
+                best_components["unscaled_moisture_var"] = moisture_variance
     transformer_back = Transformer.from_crs(crs_utm, crs_wgs84, always_xy=True)
     best_lon, best_lat = transformer_back.transform(best_pixel_coords[0], best_pixel_coords[1])
     
     target_x = np.array([best_pixel_coords[0]])
     target_y = np.array([best_pixel_coords[1]])
-    target_z = np.array(0.05)
-
-    predicted_moisture, _ = ok3d.execute("points", target_x, target_y, target_z)
+    predicted_moisture, _ = ok2d.execute("points", target_x, target_y)
     point_prediction = predicted_moisture[0]
+    try:
+        empirical_lags = ok2d.lags.tolist()
+        empirical_variances = ok2d.variogram_values.tolist()
+    except Exception:
+        empirical_lags = []
+        empirical_variances = []
+    print(f"Best Point (Lat: {best_lat}, Lon: {best_lon}) [2D - 5cm Mode]")
+    print(f"  1. Kriging Variance (+):         {best_components['kriging_var']:.4f}")
+    print(f"  2.  Normalized Moisture Variance:       {best_components['raw_moisture_var']:.4f}")
+    print(f"   3. Raw Kriging Variance (Unscaled):       {best_components['raw_kriging_var']:.4f}")
+    print(f"   3. Moisture variance (Unscaled):       {best_components['unscaled_moisture_var']:.4f}")
+    print(f"  🔥 Total A(x):              {best_acquisition:.4f}")
 
     return {
         "best_lat": float(best_lat),
         "best_lon": float(best_lon),
         "predicted_moisture": float(point_prediction),
-        "acquisition_value": float(best_acquisition)
+        "acquisition_value": float(best_acquisition),
+        "mean_kriging_variance": float(mean_kriging_variance), 
+        "variogram_lags": empirical_lags,
+        "variogram_values": empirical_variances
     }
 
-def calculate_optimal_target(battery_pct=100.0): 
+def calculate_optimal_target(battery_pct=100.0, a=0.8, model="gaussian"): 
     if not os.path.exists(CSV_PATH) or os.path.getsize(CSV_PATH) == 0:
         print("Optimization aborted: data.csv does not exist or is empty.")
         return None
 
     df = pd.read_csv(CSV_PATH)
     df = df[(df['Latitude'] != 0.0) & (df['Longitude'] != 0.0)]
-    if len(df) < 3:
-        print(f"Can't find the best point: Only {len(df)} valid GPS point(s) logged. Need at least 3.")
+    
+    df_5cm = df[df['Depth_cm'] == 5]
+    if len(df_5cm) < 3:
+        print(f"Can't find the best point: Only {len(df_5cm)} valid GPS point(s) logged at 5cm depth. Need at least 3.")
         return None
 
     data = df[['Latitude', 'Longitude', 'Depth_cm', 'Moisture']].to_numpy()
-
     rover_location_lat = 27.59413
     rover_location_lon = -97.89429
-    return _execute_optimization_math(data, battery_pct, rover_location_lat, rover_location_lon)
+    return _execute_optimization_math(data, battery_pct, rover_location_lat, rover_location_lon, a=a, model=model)
 
-def calculate_swarm_targets(swarm_state_list):
-   
+def calculate_swarm_targets(swarm_state_list, a=0.8, model="gaussian"):
     if not os.path.exists(CSV_PATH) or os.path.getsize(CSV_PATH) == 0:
         return None
 
     df = pd.read_csv(CSV_PATH)
     df = df[(df['Latitude'] != 0.0) & (df['Longitude'] != 0.0)]
-    if len(df) < 3:
+    
+    df_5cm = df[df['Depth_cm'] == 5]
+    if len(df_5cm) < 3:
         return None
-
     running_data = df[['Latitude', 'Longitude', 'Depth_cm', 'Moisture']].to_numpy()
     calculated_assignments = {}
 
     for rover_id, state in swarm_state_list.items():
-        res = _execute_optimization_math(
-            data_matrix=running_data,
-            battery_pct=state["battery"],
-            rover_pos_lat=state["lat"],
-            rover_pos_lon=state["lon"]
-        )
+        try:
+            res = _execute_optimization_math(
+                data_matrix=running_data,
+                battery_pct=state["battery"],
+                rover_pos_lat=state["lat"],
+                rover_pos_lon=state["lon"], 
+                a=a, 
+                model=model
+            )
+        except ValueError:
+            return None
         
         assigned_lat = res["best_lat"]
         assigned_lon = res["best_lon"]
@@ -204,25 +224,32 @@ def calculate_swarm_targets(swarm_state_list):
             "target_lat": assigned_lat,
             "target_lon": assigned_lon,
             "predicted_moisture": simulated_moisture,
-            "acquisition_value": res["acquisition_value"]
+            "acquisition_value": res["acquisition_value"], 
+            "mean_kriging_variance": res["mean_kriging_variance"], 
+            "variogram_lags": res.get("variogram_lags", []),
+            "variogram_values": res.get("variogram_values", [])
         }
-        simulated_measurement_row = np.array([[assigned_lat, assigned_lon, 5.0, simulated_moisture]])
+        simulated_measurement_row = np.array([[assigned_lat, assigned_lon, 5, simulated_moisture]])
         running_data = np.vstack([running_data, simulated_measurement_row])
         
     return calculated_assignments
 
-def predict_moisture_at_location(target_lat, target_lon, target_depth_cm=5.0):
+def predict_moisture_at_location(target_lat, target_lon, target_depth_cm=5.0, variogram_model="gaussian"):
+    if target_depth_cm != 5.0:
+        return None
+
     if not os.path.exists(CSV_PATH) or os.path.getsize(CSV_PATH) == 0:
         return None
     df = pd.read_csv(CSV_PATH)
     df = df[(df['Latitude'] != 0.0) & (df['Longitude'] != 0.0)]
-    if len(df) < 3:
+    
+    df_5cm = df[df['Depth_cm'] == 5]
+    if len(df_5cm) < 3:
         return None
 
-    data = df[['Latitude', 'Longitude', 'Depth_cm', 'Moisture']].to_numpy()
+    data = df_5cm[['Latitude', 'Longitude', 'Depth_cm', 'Moisture']].to_numpy()
     lat = data[:, 0] 
     lon = data[:, 1] 
-    depth_m = data[:, 2] / 100.0  
     moisture = data[:, 3] 
 
     mean_lon = np.mean(lon)
@@ -235,12 +262,11 @@ def predict_moisture_at_location(target_lat, target_lon, target_depth_cm=5.0):
     transformer = Transformer.from_crs(crs_wgs84, crs_utm, always_xy=True)
     utm_x, utm_y = transformer.transform(lon, lat)
 
-    ok3d = OrdinaryKriging3D(utm_x, utm_y, depth_m, moisture, anisotropy_scaling_z=500, variogram_model="gaussian")
+    ok2d = OrdinaryKriging(utm_x, utm_y, moisture, variogram_model=variogram_model, verbose=False, enable_plotting=False)
     target_utm_x, target_utm_y = transformer.transform(target_lon, target_lat)
-    target_depth_m = target_depth_cm / 100.0 
 
     try:
-        predicted_moisture, _ = ok3d.execute("points", np.array([target_utm_x]), np.array([target_utm_y]), np.array([target_depth_m]))
+        predicted_moisture, _ = ok2d.execute("points", np.array([target_utm_x]), np.array([target_utm_y]))
         return float(predicted_moisture[0])
     except Exception:
         return None
