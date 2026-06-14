@@ -12,7 +12,6 @@ rover_battery = 100.0
 acquisition_alpha = 0.8
 active_variogram_model = "gaussian"
 
-# --- Global Swarm Swarm Tracking Registry Objects ---
 swarm_rovers = {
     "Rover_1": {"lat": 27.59613, "lon": -97.89477, "battery": 90},
     "Rover_2": {"lat": 27.59641 , "lon": -97.89375, "battery": 90},
