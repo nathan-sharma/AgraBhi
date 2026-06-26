@@ -1,6 +1,6 @@
 ## About AgraBhi 2026-27 (Year 2)
 
-Members: Nathan Sharma (team lead), Naitik Patel, Landon Morrison
+Members: Nathan Sharma (team lead), Landon Morrison (co-founder), Adam Crossey
 
 * **Last year's project video:** [tinyurl.com/agrabhiyear1](https://tinyurl.com/agrabhiyear1)
 * **Project Website:** [agrabhi.com](https://agrabhi.com) (temporarily down for privacy reasons)
