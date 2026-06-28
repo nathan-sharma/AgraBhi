@@ -1,3 +1,4 @@
+#this code works (server.py) 
 import serial
 import pynmea2
 import time
@@ -12,6 +13,7 @@ rover_battery = 100.0
 acquisition_alpha = 0.8
 active_variogram_model = "gaussian"
 
+# --- Global Swarm Swarm Tracking Registry Objects ---
 swarm_rovers = {
     "Rover_1": {"lat": 27.59613, "lon": -97.89477, "battery": 90},
     "Rover_2": {"lat": 27.59641 , "lon": -97.89375, "battery": 90},
@@ -32,6 +34,9 @@ except Exception as e:
     serArduino = serGps = None
 
 def _calculate_haversine_decay(current_lat, current_lon, target_lat, target_lon):
+    """
+    Applies the exact same physical distance formula and decay rate rules.
+    """
     R = 6371000 
     phi1 = math.radians(current_lat)
     phi2 = math.radians(target_lat)
@@ -148,6 +153,8 @@ def update_swarm_positions():
             return jsonify({"status": "error", "message": "Missing swarm data configuration blueprint."}), 400
         
         incoming_swarm = data["swarm_data"]
+        
+        # Overwrite internal memory dictionary with manually submitted frontend coordinates
         for rover_id in swarm_rovers.keys():
             if rover_id in incoming_swarm:
                 swarm_rovers[rover_id]["lat"] = float(str(incoming_swarm[rover_id]["lat"]).strip())
@@ -162,6 +169,7 @@ def update_swarm_positions():
     except Exception as e:
         return jsonify({"status": "error", "message": f"Sync processing failure: {str(e)}"}), 500
 @app.route("/update_battery", methods=["POST"])
+
 def update_battery():
     global rover_battery
     data = request.json
@@ -190,7 +198,7 @@ def get_optimal_point():
         if optimal_results is None:
             return jsonify({
                 "status": "error",
-                "message": "Not enough data. Make sure you have 3+ points."
+                "message": "Insufficient data. Ensure you have at least 3 logged points with valid GPS locks."
             }), 400
             
         return jsonify({
@@ -203,8 +211,13 @@ def get_optimal_point():
 
 @app.route("/swarm_optimal_point", methods=["GET"])
 def get_swarm_optimal_point():
+    """
+    Executes sequential swarm engine tracking across 5 distinct rovers.
+    Applies the exact same battery drainage logic models across all simulated rovers.
+    """
     global swarm_rovers
     try:
+        # CRITICAL FIX: Pass the live, updated 'swarm_rovers' dictionary directly into the function!
         swarm_output = calculate_swarm_targets(swarm_rovers, a=acquisition_alpha, model=active_variogram_model)
         
         if swarm_output is None:
@@ -214,6 +227,7 @@ def get_swarm_optimal_point():
             }), 400
         pure_lags = swarm_output["Rover_1"].get("variogram_lags", [])
         pure_variances = swarm_output["Rover_1"].get("variogram_values", [])
+        # Apply spatial shifts and update battery states for all 5 units
         for r_id, results in swarm_output.items():
             current_lat = swarm_rovers[r_id]["lat"]
             current_lon = swarm_rovers[r_id]["lon"]
@@ -221,10 +235,13 @@ def get_swarm_optimal_point():
             target_lon = results["target_lon"]
 
             dist, drain = _calculate_haversine_decay(current_lat, current_lon, target_lat, target_lon)
-        
+            
+            # Commit simulation mutations to memory
             swarm_rovers[r_id]["battery"] = max(0.0, swarm_rovers[r_id]["battery"] - drain)
             swarm_rovers[r_id]["lat"] = target_lat
             swarm_rovers[r_id]["lon"] = target_lon
+            
+            # Map physical metrics into return payload
             swarm_output[r_id]["distance_m"] = round(dist, 2)
             swarm_output[r_id]["drain_pct"] = round(drain, 2)
             swarm_output[r_id]["remaining_battery"] = round(swarm_rovers[r_id]["battery"], 2)
@@ -281,6 +298,11 @@ def handle_predict_point():
 
 @app.route("/get_system_specs", methods=["GET"])
 def get_system_specs():
+    """
+    Exposes hardcoded optimization engine limits, charging station coordinates,
+    and active global swarm fleet tracking states to the frontend.
+    """
+    # Exact specs pulled straight out of your _execute_optimization_math file
     home_lat = 27.59496
     home_lon = -97.89311
     field_diagonal_meters = 275
@@ -312,7 +334,7 @@ def update_alpha():
             return jsonify({"status": "error", "message": "Alpha must be between 0.0 and 1.0"}), 400
             
         acquisition_alpha = new_alpha
-        print(f"Alpha is now: {acquisition_alpha}")
+        print(f"⚙️ Core optimization engine weight updated to: {acquisition_alpha}")
         
         return jsonify({
             "status": "success", 
@@ -332,12 +354,14 @@ def update_variogram():
             return jsonify({"status": "error", "message": "Missing model target selection."}), 400
         
         chosen_model = str(data["model"]).lower().strip()
+        
+        # Guard rails for what pykrige natively accepts
         valid_models = ["gaussian", "exponential", "spherical", "linear"]
         if chosen_model not in valid_models:
             return jsonify({"status": "error", "message": f"Invalid model. Must be one of {valid_models}"}), 400
             
         active_variogram_model = chosen_model
-        print(f"New Variogram {active_variogram_model}")
+        print(f"⚙️ Spatial Kriging core engine model shifted to: {active_variogram_model}")
         
         return jsonify({
             "status": "success", 
