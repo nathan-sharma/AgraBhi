@@ -1,3 +1,4 @@
+# Coded by Nathan - Expanded for Multi-Agent Swarm Simulation
 import sys
 import os
 import numpy as np
@@ -5,7 +6,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import matplotlib.colors as  mcolors
-from pykrige.ok import OrdinaryKriging  
+from pykrige.ok import OrdinaryKriging  # Changed from OrdinaryKriging3D
 from pyproj import CRS, Transformer
 import math
 import pandas as pd
@@ -13,8 +14,16 @@ import pandas as pd
 CSV_PATH = os.path.expanduser("~/Drone/drone_app/data.csv")
 
 def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_pos_lon, a=0.8, model="gaussian"):
+    """
+    Internal execution engine that calculates the optimal target point based on an 
+    in-memory data matrix FILTERED for 5cm depth, current rover positioning coordinates, 
+    and battery life using 2D Ordinary Kriging.
+    """
+    # Force strict 5cm depth filtering right at the start of mathematical execution
     mask_5cm = (data_matrix[:, 2] == 5)
     filtered_data = data_matrix[mask_5cm]
+    
+    # Check if we have enough points in our filtered dataset to perform 2D Kriging
     if len(filtered_data) < 3:
         raise ValueError("Cannot calculate 2D Kriging: Less than 3 data points found at 5cm depth.")
 
@@ -33,6 +42,8 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
     utm_x, utm_y = transformer.transform(lon, lat)
     gridx = np.linspace(utm_x.min(), utm_x.max(), num_points)
     gridy = np.linspace(utm_y.min(), utm_y.max(), num_points)
+
+    # 2D Ordinary Kriging using the Gaussian variogram model from your 3D configuration
     ok2d = OrdinaryKriging(
         utm_x, 
         utm_y, 
@@ -41,23 +52,30 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
         verbose=False,
         enable_plotting=False
     )
+
+    # Execute 2D grid generation directly
     k2d_predicted, kriging_variance_grid = ok2d.execute("grid", gridx, gridy)
     mean_kriging_variance = np.mean(kriging_variance_grid) 
     max_variance = np.max(kriging_variance_grid)
     min_variance = np.min(kriging_variance_grid)
 
+    # Drop duplicates if any rovers choose the exact same coordinate twice
     _, unique_idx = np.unique(filtered_data[:, :2], axis=0, return_index=True)
     clean_5cm_data = filtered_data[unique_idx]
 
+    # Transform these clean points directly into UTM space
     unique_utm_x, unique_utm_y = transformer.transform(clean_5cm_data[:, 1], clean_5cm_data[:, 0])
     unique_moisture_vals = clean_5cm_data[:, 3]
 
+# Determine physical step size between grid lines in meters
     dx = gridx[1] - gridx[0]
     dy = gridy[1] - gridy[0]
     
+    # Calculate spatial derivatives and overall magnitude across the entire mean grid
     grad_y, grad_x = np.gradient(k2d_predicted, dy, dx)
     gradient_magnitude_grid = np.sqrt(grad_x**2 + grad_y**2)
-
+    
+    # Determine global boundaries for normalizing
     global_min_gradient = np.min(gradient_magnitude_grid)
     global_max_gradient = np.max(gradient_magnitude_grid)
     if global_max_gradient == global_min_gradient:
@@ -72,15 +90,16 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
     field_diagonal = 275
     gamma = 0.000024 
 
+    # --- Keep track of the components for the winning point ---
     best_acquisition = -float('inf')
     best_pixel_coords = (None, None) 
 
     best_components = {
         "kriging_var": 0.0,
-        "moisture_gradient": 0.0,         
+        "moisture_gradient": 0.0,          # New: normalized gradient component
         "battery_distance_penalty": 0.0,
         "raw_kriging_var": 0.0, 
-        "raw_gradient_magnitude": 0.0,   
+        "raw_gradient_magnitude": 0.0,     # New: unscaled gradient magnitude (%/meter)
     }
     for y_idx, current_y in enumerate(gridy):
         for x_idx, current_x in enumerate(gridx):
@@ -91,8 +110,10 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
             else:
                 normalized_kriging_variance = (point_variance - min_variance) / (max_variance - min_variance)
                 
+# Pull the pre-calculated raw gradient for this specific grid cell
             gradient_magnitude = gradient_magnitude_grid[y_idx, x_idx]
-        
+                
+            # Normalize the gradient between 0 and 1
             if (global_max_gradient - global_min_gradient) == 0:
                 normalized_gradient = 0.0
             else:
@@ -118,6 +139,8 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
     
     target_x = np.array([best_pixel_coords[0]])
     target_y = np.array([best_pixel_coords[1]])
+
+    # Execute 2D prediction point extraction
     predicted_moisture, _ = ok2d.execute("points", target_x, target_y)
     point_prediction = predicted_moisture[0]
     try:
@@ -126,13 +149,16 @@ def _execute_optimization_math(data_matrix, battery_pct, rover_pos_lat, rover_po
     except Exception:
         empirical_lags = []
         empirical_variances = []
+    # --- Print components directly to the Raspberry Pi terminal ---
     print("\n" + "="*60)
-    print(f"Best Point (Lat: {best_lat}, Lon: {best_lon}) [2D - 5cm Mode]")
-    print(f"  1. Normalized Kriging Variance:         {best_components['kriging_var']:.4f}")
-    print(f"  2. Gradient raw:      {best_components['raw_gradient_magnitude']:.4f}")
-    print(f"   3. Kriging variance raw:     {best_components['raw_kriging_var']:.4f}")
-    print(f"   4. Normalized gradient:     {best_components['moisture_gradient']:.4f}")
-    print(f"  A(x,y):                {best_acquisition:.4f}")
+    print(f"🎯 Optimal Point (Lat: {best_lat}, Lon: {best_lon}) [2D - 5cm Mode]")
+    print(f"  1. Kriging Variance Component (+):         {best_components['kriging_var']:.4f}")
+    print(f"  2.  Moisture gradient raw:       {best_components['raw_gradient_magnitude']:.4f}")
+    print(f"   3. Raw Kriging Variance (Unscaled):       {best_components['raw_kriging_var']:.4f}")
+    print(f"   4. Normalized gradient       {best_components['moisture_gradient']:.4f}")
+    print(f"  ------------------------------------------------------------")
+    print(f"  🔥 Total Acquisition Value:                {best_acquisition:.4f}")
+    print("="*60 + "\n")
 
     return {
         "best_lat": float(best_lat),
@@ -152,6 +178,7 @@ def calculate_optimal_target(battery_pct=100.0, a=0.8, model="gaussian"):
     df = pd.read_csv(CSV_PATH)
     df = df[(df['Latitude'] != 0.0) & (df['Longitude'] != 0.0)]
     
+    # Enforce filtering check at 5cm prior to passing downstream
     df_5cm = df[df['Depth_cm'] == 5]
     if len(df_5cm) < 3:
         print(f"Can't find the best point: Only {len(df_5cm)} valid GPS point(s) logged at 5cm depth. Need at least 3.")
@@ -163,6 +190,11 @@ def calculate_optimal_target(battery_pct=100.0, a=0.8, model="gaussian"):
     return _execute_optimization_math(data, battery_pct, rover_location_lat, rover_location_lon, a=a, model=model)
 
 def calculate_swarm_targets(swarm_state_list, a=0.8, model="gaussian"):
+    """
+    Executes sequential calculations across 5 different swarm agents using 2D metrics.
+    Temporarily aggregates simulated coordinates and kriging prediction outputs
+    in memory to map the collective route sequence.
+    """
     if not os.path.exists(CSV_PATH) or os.path.getsize(CSV_PATH) == 0:
         return None
 
@@ -172,6 +204,8 @@ def calculate_swarm_targets(swarm_state_list, a=0.8, model="gaussian"):
     df_5cm = df[df['Depth_cm'] == 5]
     if len(df_5cm) < 3:
         return None
+
+    # Load initial experimental measurements
     running_data = df[['Latitude', 'Longitude', 'Depth_cm', 'Moisture']].to_numpy()
     calculated_assignments = {}
 
@@ -202,12 +236,14 @@ def calculate_swarm_targets(swarm_state_list, a=0.8, model="gaussian"):
             "variogram_values": res.get("variogram_values", [])
         }
         
+        # Append simulated hallucinated measurements with fixed 5cm tag to keep data points flowing within the filter loop
         simulated_measurement_row = np.array([[assigned_lat, assigned_lon, 5, simulated_moisture]])
         running_data = np.vstack([running_data, simulated_measurement_row])
         
     return calculated_assignments
 
 def predict_moisture_at_location(target_lat, target_lon, target_depth_cm=5.0, variogram_model="gaussian"):
+    # Enforce strict alignment to 5cm constraints
     if target_depth_cm != 5.0:
         return None
 
