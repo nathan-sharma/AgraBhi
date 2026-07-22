@@ -6,7 +6,7 @@ import matplotlib
 matplotlib.use('Agg')
 from matplotlib import pyplot as plt
 import matplotlib.colors as  mcolors
-from pykrige.ok import OrdinaryKriging  # Changed from OrdinaryKriging3D
+from pykrige.ok import OrdinaryKriging 
 from pyproj import CRS, Transformer
 import math
 import pandas as pd
