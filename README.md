@@ -1,4 +1,4 @@
-## About AgraBhi 2026-27 (Year 2)
+## About AgraBhi
 
 Members: Nathan Sharma (team lead), Landon Morrison (co-founder), Adam Crossey
 
