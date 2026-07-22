@@ -1,3 +1,4 @@
+#a lot of stuff here is useless from older version of the code, will be cleaned up soon
 import sys
 import os
 import numpy as np
