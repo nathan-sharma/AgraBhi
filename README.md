@@ -1,6 +1,6 @@
 ## About AgraBhi
 
-Members: Nathan Sharma (team lead), Landon Morrison (co-founder), Adam Crossey
+Team: Nathan Sharma, Founder & Team Lead; Landon Morrison, Co-Founder; and Adam Crossey.
 
 
 #### 1. Drone to Rovers
