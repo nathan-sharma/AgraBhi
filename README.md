@@ -2,6 +2,7 @@
 
 Team: Nathan Sharma, Founder & Lead; Landon Morrison, Co-Founder; and Adam Crossey.
 
+For more information, visit [our website.](https://agrabhi.com)
 
 #### 1. Drone to Rovers
 An important limitation of our project last year was the drone struggled to get through the crop canopy. Its blades could easily damage crops, and designing a solution, such as lowering a pod using a tether while the drone hovers above the crops, would cost significant battery life and be very difficult to build. To fix this, we decided to switch our project to creating a swarm of five rovers. Each rover would cost ~$400, be autonomous, and would communicate with one another to take samples effectively.
