@@ -1,7 +1,8 @@
 ## About AgraBhi
 
 Nathan Sharma (Founder & Lead) and Landon Morrison (Co-Founder)
-
+<img width="471" height="473" alt="image3 (1)" src="https://github.com/user-attachments/assets/12e93a21-7742-4847-847a-8541341cd4ad" />
+<img width="960" height="1096" alt="image1 (1)" src="https://github.com/user-attachments/assets/9aa059a6-3856-4a6b-8b31-df9577a1bdde" />
 #### Drone to Rovers
 
 An important limitation of our project last year was that the drone struggled to get through the crop canopy, and its blades could easily damage crops. To fix this, we decided to switch our project to a swarm of rovers. Each rover costs ~$1000, is autonomous, and communicates with one another to take samples effectively.
