@@ -1,6 +1,8 @@
 ## About AgraBhi
 
 Nathan Sharma (Founder & Lead) and Landon Morrison (Co-Founder)
+
+
 <img width="905" height="414" alt="Screenshot 2026-08-16 031706" src="https://github.com/user-attachments/assets/66413854-d41f-47a1-8814-22abac481eb5" />
 
 #### Drone to Rovers
