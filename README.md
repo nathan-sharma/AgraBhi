@@ -14,4 +14,6 @@ Our rovers can improve their own predictive accuracy by driving to the most unce
 
 AgraBhi is being implemented in collaboration with the Texas A&M AgriLife Extension and their partner farms. Our moisture data will inform farmers' planting decisions and help the analytical models AgriLife uses to predict crop yield with ground-truth moisture measurements.
 
-<img width="860" height="248" alt="Screenshot 2026-08-15 220753" src="https://github.com/user-attachments/assets/fdfed1e5-8eef-4cb5-9de4-cb7b052c210f" />
+
+<img width="930" height="226" alt="Screenshot 2026-08-15 221113" src="https://github.com/user-attachments/assets/fede8a34-aaa0-4601-b425-8d7352c35577" />
+
