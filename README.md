@@ -3,7 +3,6 @@
 Nathan Sharma (Founder & Lead) and Landon Morrison (Co-Founder)
 <img width="905" height="414" alt="Screenshot 2026-08-16 031706" src="https://github.com/user-attachments/assets/66413854-d41f-47a1-8814-22abac481eb5" />
 
-
 #### Drone to Rovers
 
 An important limitation of our project last year was that the drone struggled to get through the crop canopy, and its blades could easily damage crops. To fix this, we decided to switch our project to a swarm of rovers. Each rover costs ~$1000, is autonomous, and communicates with one another to take samples effectively.
