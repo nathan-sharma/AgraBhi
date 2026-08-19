@@ -115,19 +115,17 @@ def acquisition_function(data, a=0.8, model="gaussian"):
 
     predicted_moisture, _ = ok2d.execute("points", target_x, target_y)
     point_prediction = predicted_moisture[0]
-    print(f"Best Point (Lat: {best_lat}, Lon: {best_lon})")
-    print(f"  1. Kriging Variance:         {best_components['kriging_var']:.4f}")
-    print(f"  2.  Moisture gradient (raw):       {best_components['raw_gradient_magnitude']:.4f}")
-    print(f"   3. Kriging Variane (raw):       {best_components['raw_kriging_var']:.4f}")
-    print(f"   4. Normalized gradient       {best_components['moisture_gradient']:.4f}")
-    print(f" Total:                {best_acquisition:.4f}")
-
     return {
+        "alpha": float(a),
+                "raw_kriging_var": float(best_components['raw_kriging_var']),
+        "normalized_kriging_var": float(best_components['kriging_var']),
+        "raw_gradient": float(best_components['raw_gradient_magnitude']),
+    "normalized_gradient": float(best_components['moisture_gradient']),
+    "mean_kriging_variance": float(mean_kriging_variance), 
         "best_lat": float(best_lat),
         "best_lon": float(best_lon),
         "predicted_moisture": float(point_prediction),
         "acquisition_value": float(best_acquisition),
-        "mean_kriging_variance": float(mean_kriging_variance), 
     }
 
 results = acquisition_function(data, a=0.8, model="spherical")
