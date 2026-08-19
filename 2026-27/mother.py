@@ -21,10 +21,10 @@ data = np.array([
     [27.59593, -97.89164, 5,  9]
 ])
 
-def _execute_optimization_math(data, a=0.8, model="gaussian"):
+def acquisition_function(data, a=0.8, model="gaussian"):
     
     if len(data) < 3:
-        raise ValueError("Cannot calculate 2D Kriging: Less than 3 points found at 5cm depth.")
+        raise ValueError("Not enough points.")
 
     lat = data[:, 0] 
     lon = data[:, 1] 
@@ -130,6 +130,6 @@ def _execute_optimization_math(data, a=0.8, model="gaussian"):
         "mean_kriging_variance": float(mean_kriging_variance), 
     }
 
-results = _execute_optimization_math(data, a=0.8, model="spherical")
+results = acquisition_function(data, a=0.8, model="spherical")
 
 print(results)
