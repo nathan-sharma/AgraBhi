@@ -2,8 +2,8 @@ import numpy as np
 from pykrige.ok import OrdinaryKriging 
 from pyproj import CRS, Transformer
 
-
 data = np.array([
+    #lat, lon, depth, moisture
     [27.59506, -97.89397, 5,  9],
     [27.59505, -97.89222, 5,  7],
     [27.59572, -97.89357, 5, 10],
@@ -87,8 +87,7 @@ def _execute_optimization_math(data, a=0.8, model="gaussian"):
                 normalized_kriging_variance = (point_variance - min_variance) / (max_variance - min_variance)
                 
             gradient_magnitude = gradient_magnitude_grid[y_idx, x_idx]
-                
-            # Normalize the gradient between 0 and 1
+    
             if (global_max_gradient - global_min_gradient) == 0:
                 normalized_gradient = 0.0
             else:
