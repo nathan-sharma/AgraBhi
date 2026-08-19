@@ -115,7 +115,6 @@ def _execute_optimization_math(data, a=0.8, model="gaussian"):
 
     predicted_moisture, _ = ok2d.execute("points", target_x, target_y)
     point_prediction = predicted_moisture[0]
-    print("\n" + "="*60)
     print(f"Best Point (Lat: {best_lat}, Lon: {best_lon})")
     print(f"  1. Kriging Variance:         {best_components['kriging_var']:.4f}")
     print(f"  2.  Moisture gradient (raw):       {best_components['raw_gradient_magnitude']:.4f}")
