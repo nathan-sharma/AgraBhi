@@ -56,12 +56,6 @@ def _execute_optimization_math(data, a=0.8, model="gaussian"):
     max_variance = np.max(kriging_variance_grid)
     min_variance = np.min(kriging_variance_grid)
 
-    _, unique_idx = np.unique(data[:, :2], axis=0, return_index=True)
-    clean_data = data[unique_idx]
-
-    unique_utm_x, unique_utm_y = transformer.transform(clean_data[:, 1], clean_data[:, 0])
-    unique_moisture_vals = clean_data[:, 3]
-
     dx = gridx[1] - gridx[0]
     dy = gridy[1] - gridy[0]
     
@@ -122,12 +116,6 @@ def _execute_optimization_math(data, a=0.8, model="gaussian"):
 
     predicted_moisture, _ = ok2d.execute("points", target_x, target_y)
     point_prediction = predicted_moisture[0]
-    try:
-        empirical_lags = ok2d.lags.tolist()
-        empirical_variances = ok2d.variogram_values.tolist()
-    except Exception:
-        empirical_lags = []
-        empirical_variances = []
     print("\n" + "="*60)
     print(f"Best Point (Lat: {best_lat}, Lon: {best_lon})")
     print(f"  1. Kriging Variance:         {best_components['kriging_var']:.4f}")
