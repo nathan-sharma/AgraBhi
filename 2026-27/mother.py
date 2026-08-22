@@ -1,8 +1,6 @@
-
 #the locations we enter manually here are simulating the locations the rovers will send to the computer 
 #the computer then assigns each rover to an optimal location, minimizing total distance traveled
-#the alpha weight is supposed to be 0.2 + 0.6*(current mean kriging variance)/(initial mean kriging variance), we'll code something separately later to calculate alpha for every round of calculations, for now we're using 0.4 as a placeholder
-
+#the alpha weight is supposed to be 1 - (current sample)/(number of samples the rover has to do), we're just using 0.4 as a placeholder for now.
 import numpy as np
 from pykrige.ok import OrdinaryKriging
 from pyproj import CRS, Transformer
@@ -28,7 +26,7 @@ data = np.array([
     [27.59593, -97.89164, 9]
 ])
 
-alpha=0.4 #placeholder value
+alpha=0.4 #placeholder will change ts later
 def acquisition_function(data, a=alpha, model="spherical"):
 
     if len(data) < 3:
@@ -60,7 +58,6 @@ def acquisition_function(data, a=alpha, model="spherical"):
     )
 
     k2d_predicted, kriging_variance_grid = ok2d.execute("grid", gridx, gridy)
-    mean_kriging_variance = np.mean(kriging_variance_grid)
     max_variance = np.max(kriging_variance_grid)
     min_variance = np.min(kriging_variance_grid)
 
@@ -130,7 +127,6 @@ def acquisition_function(data, a=alpha, model="spherical"):
         "normalized_kriging_var": float(best_components['kriging_var']),
         "raw_gradient": float(best_components['raw_gradient_magnitude']),
         "normalized_gradient": float(best_components['moisture_gradient']),
-        "mean_kriging_variance": float(mean_kriging_variance),
         "best_lat": float(best_lat),
         "best_lon": float(best_lon),
         "predicted_moisture": float(point_prediction),
@@ -233,8 +229,7 @@ input_3_idx, input_3_best, input_3_best_lat, input_3_best_lon, input_3_dist = so
 input_1_lat, input_1_lon = user_inputs[input_1_idx]
 input_2_lat, input_2_lon = user_inputs[input_2_idx]
 input_3_lat, input_3_lon = user_inputs[input_3_idx]
-results = acquisition_function(data, a=alpha, model="spherical")
-print("Mean kriging variance right now: " + str(results['mean_kriging_variance']))
+
 print(f"Rover 1 ({input_1_lat:.6f}, {input_1_lon:.6f})  needs to go to  ({input_1_best_lat:.6f}, {input_1_best_lon:.6f})  (distance: {input_1_dist:.1f} m)")
 print(f"Rover 2 ({input_2_lat:.6f}, {input_2_lon:.6f}) needs to go to ({input_2_best_lat:.6f}, {input_2_best_lon:.6f})  (distance: {input_2_dist:.1f} m)")
 print(f"Rover 3 ({input_3_lat:.6f}, {input_3_lon:.6f}) needs to go to ({input_3_best_lat:.6f}, {input_3_best_lon:.6f})  (distance: {input_3_dist:.1f} m)")
