@@ -1,6 +1,6 @@
 #the locations we enter manually here are simulating the locations the rovers will send to the computer 
 #the computer then assigns each rover to an optimal location, minimizing total distance traveled
-#the alpha weight is supposed to be 1 - (current sample)/(number of samples the rover has to do), we're just using 0.4 as a placeholder for now.
+
 import numpy as np
 from pykrige.ok import OrdinaryKriging
 from pyproj import CRS, Transformer
@@ -26,7 +26,7 @@ data = np.array([
     [27.59593, -97.89164, 9]
 ])
 
-alpha=0.4 #placeholder will change ts later
+alpha=1 - len(data)/50  #assumes we will take 50 samples total
 def acquisition_function(data, a=alpha, model="spherical"):
 
     if len(data) < 3:
