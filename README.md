@@ -20,3 +20,20 @@ AgraBhi is being implemented in collaboration with the Texas A&M AgriLife Extens
 
 <img width="930" height="226" alt="Screenshot 2026-08-15 221113" src="https://github.com/user-attachments/assets/fede8a34-aaa0-4601-b425-8d7352c35577" />
 
+
+
+
+##### Radio Communication between rovers 
+## Rover Communication & State Flow
+
+| Pi 1 | Pi 2 | Laptop (mother) |
+| :--- | :--- | :--- |
+| Current mode: receiving | Current mode: receiving | Current mode: receiving |
+| My current location is very close to my target GPS location I was assigned, so let me extend my soil sensor to the ground, take a reading, and transmit this data with my own special ID so the other rovers know who it came from.<br><br>**SWITCHED MODE TO TRANSMITTING** | Oh, I just received some data from Pi 1, I can tell because of the ID on the packet. Since I'm not Mom, I can disregard this, but I know that Pi 1 has already sampled first. | Okay I just got data from Pi 1. I'll add this to my database and do my calculations once I get data from Pi 2. |
+| 45 seconds later: **SWITCHED MODE TO RECEIVING** | [Pi 2 is driving to their target point] | [Laptop is waiting] |
+| Okay now I did my job. All I can do is sit here and wait for a little while until Pi 2 collects their data so Mom can tell me where to go next. | Oh I just got some data from Pi 2, but since it's not from Mom because of the ID, I will disregard this.<br><br>[Pi 1 is waiting for mother rover's assignment] | Ok I have finally arrived at my target location! I will do the same thing as Pi 1 and transmit my data with my own ID to Mom.<br><br>**SWITCHED MODE TO TRANSMITTING**<br><br>45 seconds later: **SWITCHED MODE TO RECEIVING**<br><br>[Pi 2 is waiting for mother rover's assignment] |
+| Okay, I just got data from Pi 2, so I have everything I need for the calculations.<br><br>Now I'll just calculate the best points for each rover to sample.<br><br>Here are my calculations:<br>The two most optimal locations are (3,5) and (1,2). | | Now, I know exactly where Pi 1 and Pi 2 are right now because they sent me their GPS coordinates earlier with an ID. Let me calculate the points closest to each rover so they don't waste their battery unnecessarily. |
+| | | Ok, I think this is the best assignment:<br><br>Pi 1 should go to (3,5)<br><br>Pi 2 should go to (1,2) |
+| Alright, I just got my assignment from the mother rover! Let me start driving there right now. | Ooh I just got some data! Oh man, but after looking at the ID, I see it's for Pi 1, not for me. So I'm going to continue waiting. | Let me transmit Pi 1's data first for 45 seconds<br><br>**SWITCHED MODE TO TRANSMITTING** |
+| [Pi 1 is driving to their new target location] | Alright, I just got my assignment too! Let me start driving there now. | Now let me transmit Pi 2's data for another 45 seconds before switching back to receiving mode. |
+| | | After 45 seconds have passed:<br>**SWITCHED MODE TO RECEIVING.** |
