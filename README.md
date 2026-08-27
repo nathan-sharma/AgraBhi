@@ -21,7 +21,9 @@ AgraBhi is being implemented in collaboration with the Texas A&M AgriLife Extens
 <img width="930" height="226" alt="Screenshot 2026-08-15 221113" src="https://github.com/user-attachments/assets/fede8a34-aaa0-4601-b425-8d7352c35577" />
 
 
-## Radio Communication between rovers explained
+##### Radio Communication explained
+
+Rovers will communicate with each other over RF for adaptive sampling. How it works is the other rovers send their locations to our laptop which uses all data to calculate assignments for each rover. Below is an example scenario of how this would work (simplified for two rovers, we will actually have three).
 
 > **Note:** Without loss of generality, assume Pi 1 arrived at their assigned point before Pi 2. Read the cells with yellow squares first on every row to avoid confusion!
 
