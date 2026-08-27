@@ -23,12 +23,10 @@ data = np.array([
     [27.59613, -97.89477, 9],
     [27.59641, -97.89375, 14],
     [27.59702, -97.89211, 15],
-    [27.59593, -97.89164, 9], 
-    [27.596164,-97.893014,13.49],
-    [27.595862,-97.892921,12.13]
+    [27.59593, -97.89164, 9]
 ])
 
-alpha=1 - (len(data)-2)/50  #assumes we will take 50 samples total
+alpha=1 - len(data)/50  #assumes we will take 50 samples total
 def acquisition_function(data, a=alpha, model="spherical"):
 
     if len(data) < 3:
@@ -207,31 +205,3 @@ def assign_points(inputs, bests):
             best_assignment = pairing
  
     return best_assignment, best_total_distance
-
-best_points = [
-    ("best_1", best_lat_1, best_lon_1),
-    ("best_2", best_lat_2, best_lon_2),
-    ("best_3", best_lat_3, best_lon_3),
-]
-
-user_inputs = []
-for i in range(1, 4):
-    lat, lon = get_input_coordinate(f"rover {i} location")
-    user_inputs.append((lat, lon))
-
-assignment, total_distance = assign_points(user_inputs, best_points)
-
-
-sorted_assignment = sorted(assignment, key=lambda x: x[0])
-
-input_1_idx, input_1_best, input_1_best_lat, input_1_best_lon, input_1_dist = sorted_assignment[0]
-input_2_idx, input_2_best, input_2_best_lat, input_2_best_lon, input_2_dist = sorted_assignment[1]
-input_3_idx, input_3_best, input_3_best_lat, input_3_best_lon, input_3_dist = sorted_assignment[2]
-
-input_1_lat, input_1_lon = user_inputs[input_1_idx]
-input_2_lat, input_2_lon = user_inputs[input_2_idx]
-input_3_lat, input_3_lon = user_inputs[input_3_idx]
-
-print(f"Rover 1 ({input_1_lat:.6f}, {input_1_lon:.6f})  needs to go to  ({input_1_best_lat:.6f}, {input_1_best_lon:.6f})  (distance: {input_1_dist:.1f} m)")
-print(f"Rover 2 ({input_2_lat:.6f}, {input_2_lon:.6f}) needs to go to ({input_2_best_lat:.6f}, {input_2_best_lon:.6f})  (distance: {input_2_dist:.1f} m)")
-print(f"Rover 3 ({input_3_lat:.6f}, {input_3_lon:.6f}) needs to go to ({input_3_best_lat:.6f}, {input_3_best_lon:.6f})  (distance: {input_3_dist:.1f} m)")
