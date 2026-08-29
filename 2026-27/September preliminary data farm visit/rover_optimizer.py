@@ -1,3 +1,5 @@
+#the acquisition function code 
+
 #the locations we enter manually here are simulating the locations the rovers will send to the computer 
 #the computer then assigns each rover to an optimal location, minimizing total distance traveled
 
