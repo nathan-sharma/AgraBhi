@@ -1,7 +1,5 @@
 #the acquisition function code 
-
-#the locations we enter manually here are simulating the locations the rovers will send to the computer 
-#the computer then assigns each rover to an optimal location, minimizing total distance traveled
+#this assigns each rover to an optimal location and minimizes total distance traveled
 
 import numpy as np
 from pykrige.ok import OrdinaryKriging
