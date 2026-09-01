@@ -17,5 +17,3 @@ AgraBhi is being implemented in collaboration with the Texas A&M AgriLife Extens
 
 <img width="930" height="226" alt="Screenshot 2026-08-15 221113" src="https://github.com/user-attachments/assets/fede8a34-aaa0-4601-b425-8d7352c35577" />
 
----
-
