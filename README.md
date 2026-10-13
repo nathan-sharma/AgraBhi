@@ -9,11 +9,11 @@ An important limitation of our project last year was that the drone struggled to
 
 #### Modular Design
 
-<img width="1172" height="1624" alt="tower" src="https://github.com/user-attachments/assets/bf4a8757-ff48-4ad2-8ab6-56f918e75e69" />
+<img width="117.2" height="162.4" alt="tower" src="https://github.com/user-attachments/assets/bf4a8757-ff48-4ad2-8ab6-56f918e75e69" />
 
 Pre-planting: Rovers use penetration towers and sensor probes to adaptively sample soil moisture and temperature.
 
-<img width="1206" height="1388" alt="armcam" src="https://github.com/user-attachments/assets/6f2c46f2-0843-43f2-86cb-a99e45a1e590" />
+<img width="120.6" height="138.8" alt="armcam" src="https://github.com/user-attachments/assets/6f2c46f2-0843-43f2-86cb-a99e45a1e590" />
 
 In-Season: Robotic arms with 360-degree cameras are mounted on the rovers. As they drive through the field, they capture and stitch high-definition panoramic images, then feed them to our YOLO model to detect disease and count cotton bolls.
 
