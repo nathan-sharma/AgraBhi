@@ -2,17 +2,25 @@
 
 Founded by Nathan Sharma (lead) and Landon Morrison (co-founder)
 
-
 <img width="905" height="414" alt="Screenshot 2026-08-16 031706" src="https://github.com/user-attachments/assets/66413854-d41f-47a1-8814-22abac481eb5" />
 
 #### Drone to Rovers
-An important limitation of our project last year was that the drone struggled to get through the crop canopy, and its blades could easily damage crops. To fix this, we decided to switch our project to a swarm of rovers. Each rover costs ~$1500, is autonomous, and adaptively samples the field.
+An important limitation of our project last year was that the drone struggled to get through the crop canopy, and its blades could easily damage crops. To address this issue, we decided to switch our project to a swarm of rovers. Each rover costs ~$1500, supports two modes (pre-planting and in-season), and navigates the field autonomously.
 
-#### Adaptive Sampling
-Our rovers can improve their own predictive accuracy by driving to the most uncertain or unexplored parts of the fields in real time. The swarm starts by taking evenly distributed moisture measurements across the farm field and generates a heatmap. Then, our app receives all data from the other rovers to calculate the most unexplored or uncertain spots each of them should sample, transmitting assignments over LoRa radio.
+#### Modular Design
+
+<img width="1172" height="1624" alt="tower" src="https://github.com/user-attachments/assets/bf4a8757-ff48-4ad2-8ab6-56f918e75e69" />
+
+Pre-planting: Rovers use penetration towers and sensor probes to adaptively sample soil moisture and temperature.
+
+<img width="1206" height="1388" alt="armcam" src="https://github.com/user-attachments/assets/6f2c46f2-0843-43f2-86cb-a99e45a1e590" />
+
+In-Season: Robotic arms with 360-degree cameras are mounted on the rovers. As they drive through the field, they capture and stitch high-definition panoramic images, then feed them to our YOLO model to detect disease and count cotton bolls.
+
+Rovers can easily switch between the pre-planting and in-season modes by swapping their top assemblies.
 
 #### Implementation on Farms
-AgraBhi is being implemented in collaboration with the Texas A&M AgriLife Extension and their partner farms. Our soil moisture data will help farmers' planting decisions, and our visual crop data with ArmCam (more on this soon) will help the analytical models AgriLife uses to predict crop yield by providing cotton boll counts.
+AgraBhi is being implemented in collaboration with the Texas A&M AgriLife Extension. Our soil moisture data help local farmers make better-informed planting decisions, and our cotton boll data provide AgriLife’s models with growth indicators, helping them better predict yield on their partner farms.
 
 
 <img width="930" height="226" alt="Screenshot 2026-08-15 221113" src="https://github.com/user-attachments/assets/fede8a34-aaa0-4601-b425-8d7352c35577" />
