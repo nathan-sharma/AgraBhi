@@ -28,10 +28,9 @@ AgraBhi is being implemented in collaboration with the Texas A&M AgriLife Extens
 
 #### Notes
 ```
-roverdrivebetter.py #autonomous navigation code
-raspberrypi.py #rtk gps code
-/home/sharma007/stitch.py #stiching code on pi 5
-/home/sharma007/panorama.py #taking pictures code on pi 0
-ssh sharma007@rovercam.local
-
+roverdrivebetter.py <-- autonomous navigation code
+raspberrypi.py <-- rtk gps code
+/home/sharma007/stitch.py <-- stiching code on pi 5
+/home/sharma007/panorama.py <-- taking pictures code on pi 0
+ssh sharma007@rovercam.local <-- ssh into pi 0 from pi 5
 ```
